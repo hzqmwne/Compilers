@@ -1,0 +1,16 @@
+prog
+args: 2
+8 7 
+80 
+prog_prog
+args: 3
+8 7 
+80 
+85 85 84 
+850 
+right_prog
+args: 3
+8 7 
+80 
+85 85 84 
+850 
