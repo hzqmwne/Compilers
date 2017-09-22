@@ -35,9 +35,53 @@ char *getstr(const char *str)
 	return NULL;
 }
 
+static int input(void);
+
+char *stringToken() {
+	yyleng = 1;
+	int maxlen = 128;
+	char *s = (char *)malloc(maxlen);
+	int pos = 0;
+	char c;
+	while((c = (char)input()) != EOF) {
+		++yyleng;
+		if(c == '\"') {
+			break;
+		}
+		if(c == '\n') {
+			break;
+		}
+		if(c == '\\') {
+			c = (char)input();
+			++yyleng;
+			switch(c) {    // still have other conditions
+			case 'n':
+				c = '\n';
+				break;
+			default:
+				break;
+			}
+		}
+		if(pos >= maxlen) {
+			s = (char *)realloc(s, maxlen * 2);
+			maxlen = maxlen * 2;
+		}
+		s[pos] = (char)c;
+		++pos;
+	}
+	s[pos] = '\0';
+	if(pos == 0) {    //
+		strcpy(s, "(null)");
+	}
+	return s;
+}
+
+int commentStartCount = 0;
+
 %}
   /* You can add lex definitions here. */
 
+%Start COMMENT
 %%
   /* 
   * Below is an example, which you can wipe out
@@ -45,3 +89,59 @@ char *getstr(const char *str)
   */ 
 
 "\n" {adjust(); EM_newline(); continue;}
+<INITIAL>(" "|"\t")+ {adjust();}
+
+<INITIAL>while {adjust(); return WHILE;}
+<INITIAL>for {adjust(); return FOR;}
+<INITIAL>to {adjust(); return TO;}
+<INITIAL>break {adjust(); return BREAK;}
+<INITIAL>let {adjust(); return LET;}
+<INITIAL>in {adjust(); return IN;}
+<INITIAL>end {adjust(); return END;}
+<INITIAL>function {adjust(); return FUNCTION;}
+<INITIAL>var {adjust(); return VAR;}
+<INITIAL>type {adjust(); return TYPE;}
+<INITIAL>array {adjust(); return ARRAY;}
+<INITIAL>if {adjust(); return IF;}
+<INITIAL>then {adjust(); return THEN;}
+<INITIAL>else {adjust(); return ELSE;}
+<INITIAL>do {adjust(); return DO;}
+<INITIAL>of {adjust(); return OF;}
+<INITIAL>nil {adjust(); return NIL;}
+
+<INITIAL>\x22 {yylval.sval=stringToken(); adjust(); return STRING;}
+<INITIAL>"/*" {adjust(); ++commentStartCount; BEGIN COMMENT;}
+
+<INITIAL>":=" {adjust(); return ASSIGN;}
+<INITIAL>"," {adjust(); return COMMA;}
+<INITIAL>":" {adjust(); return COLON;}
+<INITIAL>";" {adjust(); return SEMICOLON;}
+<INITIAL>"(" {adjust(); return LPAREN;}
+<INITIAL>")" {adjust(); return RPAREN;}
+<INITIAL>"[" {adjust(); return LBRACK;}
+<INITIAL>"]" {adjust(); return RBRACK;}
+<INITIAL>"{" {adjust(); return LBRACE;}
+<INITIAL>"}" {adjust(); return RBRACE;}
+<INITIAL>"." {adjust(); return DOT;}
+<INITIAL>"+" {adjust(); return PLUS;}
+<INITIAL>"-" {adjust(); return MINUS;}
+<INITIAL>"*" {adjust(); return TIMES;}
+<INITIAL>"/" {adjust(); return DIVIDE;}
+<INITIAL>"=" {adjust(); return EQ;}
+<INITIAL>"!="|"<>" {adjust(); return NEQ;}
+<INITIAL>"<=" {adjust(); return LE;}
+<INITIAL>"<" {adjust(); return LT;}
+<INITIAL>">=" {adjust(); return GE;}
+<INITIAL>">" {adjust(); return GT;}
+<INITIAL>"&" {adjust(); return AND;}
+<INITIAL>"|" {adjust(); return OR;}
+
+<INITIAL>[A-Za-z][A-Za-z0-9_]* {adjust(); yylval.sval=String(yytext); return ID;}
+<INITIAL>[0-9]+ {adjust(); yylval.ival=atoi(yytext); return INT;}
+
+<COMMENT>"/*" {adjust(); ++commentStartCount;}
+<COMMENT>"*/" {adjust(); --commentStartCount; if(commentStartCount==0) {BEGIN INITIAL;}}
+<COMMENT>(" "|"\t")+ {adjust();}
+<COMMENT>. {adjust();}
+
+. {BEGIN INITIAL; yyless(1);}
