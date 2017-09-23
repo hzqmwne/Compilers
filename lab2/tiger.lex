@@ -58,6 +58,9 @@ char *stringToken() {
 			case 'n':
 				c = '\n';
 				break;
+			case 't':
+				c = '\t';
+				break;
 			default:
 				break;
 			}
@@ -70,9 +73,6 @@ char *stringToken() {
 		++pos;
 	}
 	s[pos] = '\0';
-	if(pos == 0) {    //
-		strcpy(s, "(null)");
-	}
 	return s;
 }
 
