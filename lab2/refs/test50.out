@@ -1,21 +1,21 @@
-       LET   68
-      TYPE   74
-        ID   79 rectype
-        EQ   87
-    LBRACE   89
-        ID   90 name
-     COLON   94
-        ID   95 string
-     COMMA  101
-        ID  103 id
-     COLON  105
-        ID  106 int
-    RBRACE  109
-       VAR  113
-        ID  117 a
-    ASSIGN  118
-        ID  121 rectype
-       NIL  129
-        IN  133
-        ID  137 a
-       END  139
+       LET   83
+      TYPE   89
+        ID  103 rectype
+        EQ  111
+    LBRACE  113
+        ID  114 name
+     COLON  118
+        ID  119 string
+     COMMA  125
+        ID  127 id
+     COLON  129
+        ID  130 int
+    RBRACE  133
+       VAR  137
+        ID  141 a
+    ASSIGN  142
+        ID  145 rectype
+       NIL  153
+        IN  157
+        ID  161 a
+       END  163
