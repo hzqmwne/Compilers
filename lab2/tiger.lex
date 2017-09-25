@@ -74,6 +74,7 @@ char *stringToken() {
 	}
 	s[pos] = '\0';
 	if(pos == 0) {
+		free(s);
 		return NULL;
 	}
 	return s;
