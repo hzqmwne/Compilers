@@ -73,6 +73,9 @@ char *stringToken() {
 		++pos;
 	}
 	s[pos] = '\0';
+	if(pos == 0) {
+		return NULL;
+	}
 	return s;
 }
 
