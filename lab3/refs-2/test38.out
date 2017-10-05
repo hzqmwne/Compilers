@@ -1,0 +1,15 @@
+ letExp(
+  decList(
+   typeDec(
+    nametyList(
+     namety(a,
+      nameTy(int)),
+     nametyList(
+      namety(a,
+       nameTy(string)),
+      nametyList()))),
+   decList()),
+  seqExp(
+   expList(
+    intExp(0),
+    expList())))

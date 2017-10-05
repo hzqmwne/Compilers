@@ -1,0 +1,19 @@
+ letExp(
+  decList(
+   typeDec(
+    nametyList(
+     namety(arrayty,
+      arrayTy(int)),
+     nametyList())),
+   decList(
+    varDec(a,
+     ,
+     arrayExp(arrayty,
+      intExp(10),
+      stringExp( )),
+     TRUE),
+    decList())),
+  seqExp(
+   expList(
+    intExp(0),
+    expList())))
