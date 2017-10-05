@@ -143,9 +143,10 @@ int commentStartCount = 0;
 <INITIAL>[A-Za-z][A-Za-z0-9_]* {adjust(); yylval.sval=String(yytext); return ID;}
 <INITIAL>[0-9]+ {adjust(); yylval.ival=atoi(yytext); return INT;}
 
+<INITIAL>. {adjust(); EM_error(charPos, "illegal character");}
+
 <COMMENT>"/*" {adjust(); ++commentStartCount;}
 <COMMENT>"*/" {adjust(); --commentStartCount; if(commentStartCount==0) {BEGIN INITIAL;}}
 <COMMENT>(" "|"\t")+ {adjust();}
 <COMMENT>. {adjust();}
 
-. {BEGIN INITIAL; yyless(1);}
