@@ -20,9 +20,6 @@ DIFFOPTION="-w -B"
 score=0
 
 #echo $?
-mv tiger.lex ../
-cp template.lex tiger.lex
-sh change.sh
 make clean
 make
 if [[ $? != 0 ]]; then
