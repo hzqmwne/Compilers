@@ -78,7 +78,7 @@ program:	exp {absyn_root = $1;};
 
 exp:   lvalue  {$$ = A_VarExp(EM_tokPos, $1);}
       |NIL  {$$ = A_NilExp(EM_tokPos);}
-      |LPAREN sequencing_exps RPAREN  {$$ = A_SeqExp(EM_tokPos, $2);}
+      |LPAREN sequencing RPAREN  {$$ = A_SeqExp(EM_tokPos, $2);}
       |LPAREN exp RPAREN  {$$ = $2;}
       |INT  {$$ = A_IntExp(EM_tokPos, $1);}
       |STRING  {$$ = A_StringExp(EM_tokPos, $1);}
