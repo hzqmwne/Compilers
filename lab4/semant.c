@@ -9,7 +9,7 @@
 #include "helper.h"
 #include "env.h"
 #include "semant.h"
-#include "stdlib.h"
+#include <stdlib.h>
 
 /*Lab4: Your implementation of lab4*/
 
@@ -45,14 +45,16 @@ static Ty_ty actual_ty(Ty_ty ty) {
 	return ty;
 }
 
-static int equal_ty(int ty1, int ty2) {    // check if two type equal (especially for Ty_nil)
-	if(ty1 != Ty_nil && ty2 != Ty_nil) {
+static int equal_ty(Ty_ty ty1, Ty_ty ty2) {    // check if two type equal (especially for Ty_nil)
+	ty1 = actual_ty(ty1);
+	ty2 = actual_ty(ty2);
+	if(ty1->kind != Ty_nil && ty2->kind != Ty_nil) {
 		return (ty1 == ty2);
 	}
-	if(ty1 == Ty_nil && (ty2 == Ty_record || ty2 == Ty_array || ty2 == Ty_nil)) {
+	if(ty1->kind == Ty_nil && (ty2->kind == Ty_record || ty2->kind == Ty_array || ty2->kind == Ty_nil)) {
 		return 1;
 	}
-	if(ty2 == Ty_nil && (ty1 == Ty_record || ty1 == Ty_array)) {
+	if(ty2->kind == Ty_nil && (ty1->kind == Ty_record || ty1->kind == Ty_array)) {
 		return 1;
 	}
 	return 0;
@@ -223,7 +225,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a) {
 						EM_error(a->pos, "too few params in function %s", S_name(a->u.call.func));
 						break;
 					}
-					else if(e == NULL || t == NULL || !equal_ty(transExp(venv, tenv, e->head).ty->kind, actual_ty(t->head)->kind)) {
+					else if(e == NULL || t == NULL || !equal_ty(transExp(venv, tenv, e->head).ty, actual_ty(t->head))) {
 						EM_error(a->pos, "para type mismatch");
 						break;
 					}
@@ -262,9 +264,11 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a) {
 						EM_error(a->pos, "same type required");
 					}
 					*/
-					int lk = left.ty->kind;
-					int rk = right.ty->kind;
-					if((lk == Ty_nil && rk == Ty_nil) || !equal_ty(lk, rk)) {
+					Ty_ty lt = actual_ty(left.ty);
+					Ty_ty rt = actual_ty(right.ty);
+					int lk = lt->kind;
+					int rk = rt->kind;
+					if((lk == Ty_nil && rk == Ty_nil) || !equal_ty(lt, rt)) {
 						EM_error(a->pos, "same type required");
 					}
 					switch(lk) {
@@ -294,7 +298,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a) {
 					}
 					else {
 						for(t = ty->u.record, e = a->u.record.fields; e || t; t = t->tail, e = e->tail) {
-							if(e == NULL || t == NULL || e->head->name != t->head->name || !equal_ty(transExp(venv, tenv, e->head->exp).ty->kind, actual_ty(t->head->ty)->kind)) {
+							if(e == NULL || t == NULL || e->head->name != t->head->name || !equal_ty(transExp(venv, tenv, e->head->exp).ty, actual_ty(t->head->ty))) {
 								EM_error(a->pos, "args type error %s", S_name(a->u.call.func));
 								break;
 							}
@@ -332,7 +336,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a) {
 					EM_error(a->pos, "loop variable can't be assigned");
 				}
 			}
-			if(!equal_ty(e1.ty->kind, e2.ty->kind)) {
+			if(!equal_ty(e1.ty, e2.ty)) {
 				EM_error(a->pos, "unmatched assign exp");
 			}
 			return expTy(NULL, Ty_Void());
@@ -347,7 +351,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a) {
 			struct expty e1 = transExp(venv, tenv, a->u.iff.then);
 			if(a->u.iff.elsee != NULL) {
 				struct expty e2 = transExp(venv, tenv, a->u.iff.elsee);
-				if(!equal_ty(e1.ty->kind, e2.ty->kind)) {
+				if(!equal_ty(e1.ty, e2.ty)) {
 					EM_error(a->pos, "then exp and else exp type mismatch");
 				}
 				return expTy(NULL, e2.ty->kind == Ty_nil ? e1.ty : e2.ty);
@@ -407,20 +411,21 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a) {
 			break;
 		}
 		case A_arrayExp: {
-			Ty_ty x = S_look(tenv, a->u.array.typ);
-			if(x) {
-				Ty_ty t = actual_ty(actual_ty(x)->u.array);
+			Ty_ty xr = S_look(tenv, a->u.array.typ);
+			Ty_ty x = actual_ty(xr);
+			if(xr && x->kind == Ty_array) {
+				Ty_ty t = actual_ty(x->u.array);
 				struct expty es = transExp(venv, tenv, a->u.array.size);
 				if(es.ty->kind != Ty_int) {
 					EM_error(a->pos, "array exp index should be int");
 					return expTy(NULL, Ty_Array(t));
 				}
 				struct expty eb = transExp(venv, tenv, a->u.array.init);
-				if(!equal_ty(eb.ty->kind, t->kind)) {
+				if(!equal_ty(eb.ty, t)) {
 					EM_error(a->pos, "type mismatch");
 					return expTy(NULL, Ty_Array(t));
 				}
-				return expTy(NULL, Ty_Array(t));
+				return expTy(NULL, x);
 			}
 			else {
 				EM_error(a->pos, "array type error");
@@ -449,7 +454,7 @@ void transDec(S_table venv, S_table tenv, A_dec d) {
 			}
 			for(fl = d->u.function; fl; fl = fl->tail) {
 				A_fundec f = fl->head;
-				Ty_ty resultTy = (f->result == NULL) ? Ty_Void() : S_look(tenv, f->result);
+				Ty_ty resultTy = (f->result == NULL) ? Ty_Void() : actual_ty(S_look(tenv, f->result));
 				if(resultTy == NULL) {
 					EM_error(d->pos, "function return type undeclared");
 				}
@@ -469,7 +474,7 @@ void transDec(S_table venv, S_table tenv, A_dec d) {
 					}
 				}
 				struct expty e = transExp(venv, tenv, f->body);
-				if(!equal_ty(e.ty->kind, resultTy->kind)) {
+				if(!equal_ty(e.ty, resultTy)) {
 					if(resultTy->kind == Ty_void) {
 						EM_error(d->pos, "procedure returns value");
 					}
@@ -485,16 +490,15 @@ void transDec(S_table venv, S_table tenv, A_dec d) {
 			struct expty e = transExp(venv, tenv, d->u.var.init);
 			Ty_ty t = NULL;
 			if(d->u.var.typ != NULL) {
-				t = S_look(tenv, d->u.var.typ);
+				t = actual_ty(S_look(tenv, d->u.var.typ));
 			}
 			if(t != NULL && t->kind != Ty_void) {
-				if(!equal_ty(e.ty->kind, t->kind)) {
+				if(!equal_ty(e.ty, t)) {
 					EM_error(d->pos, "type mismatch");
-					S_enter(venv, d->u.var.var, E_VarEntry(t));
 					break;
 				}
-				else {		
-					S_enter(venv, d->u.var.var, E_VarEntry(t));
+				else {
+					S_enter(venv, d->u.var.var, E_VarEntry(t));    // t->kind == Ty_nil and e.ty->kind == Ty_array || Ty_record is allowed, so E_VarEntry must use t but e.ty !
 				}
 			}
 			else {
