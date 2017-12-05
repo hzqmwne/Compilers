@@ -383,7 +383,6 @@ Tr_exp Tr_whileExp(Tr_exp condp, Tr_exp bodyExp, Temp_label done) {
 Tr_exp Tr_forExp(Tr_access loopVar, Tr_exp lo, Tr_exp hi, Tr_exp bodyExp, Temp_label done, Tr_level current) {
 	Temp_label start = Temp_newlabel();
 	Temp_label t = Temp_newlabel();
-	assert(loopVar->access->kind == inReg);
 	T_exp i = F_exp(loopVar->access, NULL);
 	F_access acc = F_allocLocal(current->frame, FALSE);
 	assert(acc->kind == inReg);

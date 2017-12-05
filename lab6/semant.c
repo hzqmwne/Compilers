@@ -420,7 +420,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a, Tr_level level, Temp_
 				return expTy(Tr_nop(), Ty_Void());
 			}
 			S_beginScope(venv);
-			Tr_access loopVar = Tr_allocLocal(level, FALSE);    // don't allow fundec in for loop ???
+			Tr_access loopVar = Tr_allocLocal(level, a->u.forr.escape);
 			S_enter(venv, a->u.forr.var, E_ROVarEntry(loopVar, Ty_Int()));
 			struct expty eb = transExp(venv, tenv, a->u.forr.body, level, done);
 			if(eb.ty->kind != Ty_void) {
