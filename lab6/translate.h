@@ -65,7 +65,7 @@ Tr_exp Tr_recordExp(Tr_trExpList reserveOrderArgs, int argCnt, Tr_level current)
 Tr_exp Tr_arrayExp(Tr_exp size, Tr_exp init);
 Tr_exp Tr_breakExp(Temp_label target);
 Tr_exp Tr_initExp(Tr_access var, Tr_exp init);
-//Tr_exp Tr_funcDec(Tr_exp body, Tr_level lv);
+Tr_exp Tr_funcDec(Tr_exp body, Tr_level lv);
 
 void Tr_procEntryExit(Tr_level level, Tr_exp body, Tr_accessList formals);
 F_fragList Tr_getResult(void);

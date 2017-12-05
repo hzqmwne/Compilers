@@ -50,7 +50,7 @@ void yyerror(char *s)
 
 %type <exp> exp expseq
 %type <explist> actuals  nonemptyactuals sequencing  sequencing_exps
-%type <var>  lvalue one oneormore
+%type <var>  lvalue /*one oneormore*/
 %type <declist> decs decs_nonempty
 %type <dec>  decs_nonempty_s vardec
 %type <efieldlist> rec rec_nonempty 

@@ -4,6 +4,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "util.h"
 #include "symbol.h"
 #include "temp.h"
@@ -168,3 +169,36 @@ void *G_look(G_table t, G_node node)
 }
 
 
+G_nodeList G_removeOne(G_node one, G_nodeList list) {
+	G_nodeList now;
+	G_nodeList prev = NULL;
+	for(now = list; now; prev = now, now = now->tail) {
+		if(now->head == one) {
+			if(prev != NULL) {
+				prev->tail = now->tail;
+				free(now);
+				return list;
+			}
+			else {
+				list = now->tail;
+				free(now);
+				return list;
+			}
+		}
+	}
+	return list;
+}
+/*
+G_nodeList G_unionList(G_nodeList first, G_nodeList second) {
+	G_nodeList result = NULL;
+	for(G_nodeList nl = first; nl; nl = nl->tail) {
+		if(!G_inNodeList(nl->head, second)) {
+			result = G_NodeList(nl->head, result);
+		}
+	}
+	for(G_nodeList nl = second; nl; nl = nl->tail) {
+		result = G_NodeList(nl->head, result);
+	}
+	return result;
+}
+*/

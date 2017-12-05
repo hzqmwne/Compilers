@@ -38,6 +38,11 @@ char *getstr(const char *str)
 }
 
 static int input(void);
+static void yyunput (int, char *);
+
+static int isDigital(char c) {
+	return (c >= 0x30 && c <= 0x39);
+}
 
 char *stringToken() {
 	yyleng = 1;
@@ -64,6 +69,18 @@ char *stringToken() {
 				c = '\t';
 				break;
 			default:
+				if(isDigital(c)) {
+					char c1 = (char)input();
+					char c2 = (char)input();
+					if(isDigital(c1) && isDigital(c2)) {
+						c = c*100 + c1*10 + c2;
+						yyleng += 2;
+					}
+					else {
+						unput(c2);
+						unput(c1);
+					}
+				}
 				break;
 			}
 		}
@@ -75,7 +92,11 @@ char *stringToken() {
 		++pos;
 	}
 	s[pos] = '\0';
-	return s;
+	char *tigerStr = (char *)malloc(sizeof(int) + pos + 1);
+	*((int *)tigerStr) = pos;
+	strcpy(tigerStr + sizeof(int), s);
+	free(s);
+	return tigerStr;
 }
 
 int commentStartCount = 0;

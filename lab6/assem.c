@@ -48,6 +48,44 @@ AS_instr AS_Move(string a, Temp_tempList d, Temp_tempList s) {
   return p;
 }
 
+string AS_assem(AS_instr a) {
+	switch(a->kind) {
+		case I_OPER: {
+			return a->u.OPER.assem;
+			break;
+		}
+		case I_LABEL: {
+			return a->u.LABEL.assem;
+			break;
+		}
+		case I_MOVE: {
+			return a->u.MOVE.assem;
+			break;
+		}
+	}
+	assert(0);
+}
+
+Temp_tempList AS_dst(AS_instr a) {
+	if(a->kind == I_OPER) {
+		return a->u.OPER.dst;
+	}
+	else if(a->kind == I_MOVE) {
+		return a->u.MOVE.dst;
+	}
+	return NULL;
+}
+
+Temp_tempList AS_src(AS_instr a) {
+	if(a->kind == I_OPER) {
+		return a->u.OPER.src;
+	}
+	else if(a->kind == I_MOVE) {
+		return a->u.MOVE.src;
+	}
+	return NULL;
+}
+
 AS_instrList AS_InstrList(AS_instr head, AS_instrList tail)
 {AS_instrList p = (AS_instrList) checked_malloc (sizeof *p);
  p->head=head; p->tail=tail;

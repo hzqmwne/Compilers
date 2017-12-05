@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "util.h"
 #include "table.h"
 #include "symbol.h"
@@ -182,19 +184,10 @@ static Tr_exp Tr_staticLink(Tr_level current, Tr_level declare) {    // return v
 	for(; current != declare; current = current->parent) {
 		assert(current != NULL);
 		F_access sl = F_formals(current->frame)->head;    // must be inFrame(8) in x86
-		//assert(sl->kind == inFrame && sl->u.offset == 8);
+		assert(sl->kind == inFrame && sl->u.offset == 8);
 		result = F_exp(sl, result);
 	}
 	return Tr_Ex(result);
-	/*
-	assert(current != NULL);
-	if(current == declare) {
-		return Tr_Ex(T_Temp(F_FP()));
-	}
-	F_access sl = F_staticLinkFormal(current->frame);    // must be inFrame(8) in x86
-	assert(sl->kind == inFrame);
-	return T_Ex(T_Mem(T_Binop(T_plus, unEx(Tr_staticLink(current->parent, declare)), sl->u.offset)));
-	*/
 }
 
 Tr_trExpList Tr_TrExpList(Tr_exp head, Tr_trExpList tail) {
@@ -244,7 +237,7 @@ static Tr_accessList f_accl2tr_accl(Tr_level level, F_accessList f_accl) {
 }
 Tr_accessList Tr_formals(Tr_level level) {
 	F_accessList f_accl =  F_formals(level->frame);
-	Tr_accessList tr_accl = f_accl2tr_accl(level, f_accl);
+	Tr_accessList tr_accl = f_accl2tr_accl(level, f_accl->tail);    // the first item in f_accl is static link !
 	return tr_accl;
 }
 
@@ -255,16 +248,6 @@ Tr_access Tr_allocLocal(Tr_level level, bool escape) {
 /* ========================== */
 
 Tr_exp Tr_simpleVar(Tr_access acc, Tr_level lv) {
-	/*
-	if(acc->access->kind == inReg) {
-		assert(acc->access->level == lv);
-		return Tr_Ex(F_exp(acc->access, NULL));
-	}
-	else if(acc->access->kind == inFrame) {
-		return Tr_Ex(F_exp(acc->access, Tr_staticLink(lv, acc->level)));
-	}
-	assert(0);
-	*/
 	return Tr_Ex(F_exp(acc->access, unEx(Tr_staticLink(lv, acc->level))));
 }
 
@@ -277,14 +260,14 @@ Tr_exp Tr_subscriptVar(Tr_exp host, Tr_exp idx) {
 }
 
 Tr_exp Tr_nop() {
-	return Tr_Ex(T_Const(0));     //////
+	return Tr_Ex(T_Const(0));
 }
 
 Tr_exp Tr_intExp(int v) {
 	return Tr_Ex(T_Const(v));
 }
 
-Tr_exp Tr_strExp(string str) {
+Tr_exp Tr_strExp(string str) {    // the str is tiger form, which first 4bytes is length
 	Temp_label new_label = Temp_newlabel();
 	F_frag new_frag = F_StringFrag(new_label, str);
 	all_frags = F_FragList(new_frag, all_frags);
@@ -310,7 +293,9 @@ Tr_exp Tr_opExp(Tr_exp left, Tr_exp right, A_oper oper) {
 			binOp = T_div;
 			break;
 		}
-		assert(0);
+		default: {
+			assert(0);
+		}
 	}
 	return Tr_Ex(T_Binop(binOp, unEx(left), unEx(right)));
 }
@@ -342,7 +327,9 @@ Tr_exp Tr_relOpExp(Tr_exp left, Tr_exp right, A_oper oper) {
 			relOp = T_ge;
 			break;
 		}
-		assert(0);
+		default: {
+			assert(0);
+		}
 	}
 	T_stm s = T_Cjump(relOp, unEx(left), unEx(right), NULL, NULL);
 	patchList trues = PatchList(&s->u.CJUMP.true, NULL);
@@ -363,7 +350,7 @@ Tr_exp Tr_ifExp(Tr_exp condp, Tr_exp thenp, Tr_exp elsep, bool isVoid, Tr_level 
 	T_exp r = NULL;/////?????
 	if(!isVoid) {
 		F_access acc = F_allocLocal(current->frame, FALSE);
-		//assert(acc->kind == inReg);
+		assert(acc->kind == inReg);
 		r = F_exp(acc, NULL);
 	}
 	struct Cx cond = unCx(condp);
@@ -396,10 +383,10 @@ Tr_exp Tr_whileExp(Tr_exp condp, Tr_exp bodyExp, Temp_label done) {
 Tr_exp Tr_forExp(Tr_access loopVar, Tr_exp lo, Tr_exp hi, Tr_exp bodyExp, Temp_label done, Tr_level current) {
 	Temp_label start = Temp_newlabel();
 	Temp_label t = Temp_newlabel();
-	//assert(loopVar->access->kind == inReg);
+	assert(loopVar->access->kind == inReg);
 	T_exp i = F_exp(loopVar->access, NULL);
 	F_access acc = F_allocLocal(current->frame, FALSE);
-	//assert(acc->kind == inReg);
+	assert(acc->kind == inReg);
 	T_exp limit = F_exp(acc, NULL);
 	return Tr_Nx(T_Seq(T_Move(limit, unEx(hi)), 
 		T_Seq(T_Move(i, unEx(lo)), 
@@ -423,6 +410,9 @@ Tr_exp Tr_callExp(Temp_label name, Tr_trExpList reserveOrderArgs, Tr_level curre
 	for(tmp = reserveOrderArgs; tmp; tmp = tmp->tail) {
 		//Tr_access acc = Tr_allocLocal(current, TRUE);/////////????????
 		final = T_ExpList(unEx(tmp->head), final);
+	}
+	if(declare == Tr_outermost()) {
+		return Tr_Ex(F_externalCall(Temp_labelstring(name), final));
 	}
 	Tr_exp sl = Tr_staticLink(current, declare);
 	final = T_ExpList(unEx(sl), final);
@@ -450,7 +440,7 @@ Tr_exp Tr_recordExp(Tr_trExpList reserveOrderArgs, int argCnt, Tr_level current)
 	T_stm stms = NULL;
 	int index = argCnt;
 	F_access acc = F_allocLocal(current->frame, 0);
-	//assert(acc->kind == inReg);
+	assert(acc->kind == inReg);
 	T_exp r = F_exp(acc, NULL);/////?????
 	for(tmp = reserveOrderArgs; tmp; tmp = tmp->tail) {
 		--index;
@@ -480,7 +470,9 @@ Tr_exp Tr_initExp(Tr_access var, Tr_exp init) {
 	return Tr_Nx(T_Move(F_exp(var->access, T_Temp(F_FP())), unEx(init)));
 }
 
-//Tr_exp Tr_funcDec(Tr_exp body, Tr_level lv);
+Tr_exp Tr_funcDec(Tr_exp body, Tr_level lv) {
+	return Tr_Nx(T_Move(T_Temp(F_RV()), unEx(body)));
+}
 
 void Tr_procEntryExit(Tr_level level, Tr_exp body, Tr_accessList formals) {
 	////// still should do formals !!!!!

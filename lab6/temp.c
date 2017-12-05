@@ -97,6 +97,36 @@ Temp_tempList Temp_TempList(Temp_temp h, Temp_tempList t)
  return p;
 }
 
+bool Temp_inTempList(Temp_temp t, Temp_tempList l) {
+	Temp_tempList p;
+	for(p=l; p!=NULL; p=p->tail) {
+		if (p->head==t) {
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+Temp_tempList Temp_removeOne(Temp_temp one, Temp_tempList list) {
+	Temp_tempList now;
+	Temp_tempList prev = NULL;
+	for(now = list; now; prev = now, now = now->tail) {
+		if(now->head == one) {
+			if(prev != NULL) {
+				prev->tail = now->tail;
+				free(now);
+				return list;
+			}
+			else {
+				list = now->tail;
+				free(now);
+				return list;
+			}
+		}
+	}
+	return list;
+}
+
 Temp_labelList Temp_LabelList(Temp_label h, Temp_labelList t)
 {Temp_labelList p = (Temp_labelList) checked_malloc(sizeof (*p));
  p->head=h; p->tail=t;

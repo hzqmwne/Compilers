@@ -22,6 +22,10 @@ AS_instr AS_Oper(string a, Temp_tempList d, Temp_tempList s, AS_targets j);
 AS_instr AS_Label(string a, Temp_label label);
 AS_instr AS_Move(string a, Temp_tempList d, Temp_tempList s);
 
+string AS_assem(AS_instr a);
+Temp_tempList AS_dst(AS_instr a);
+Temp_tempList AS_src(AS_instr a);
+
 void AS_print(FILE *out, AS_instr i, Temp_map m);
 
 typedef struct AS_instrList_ *AS_instrList;

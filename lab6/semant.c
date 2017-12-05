@@ -107,6 +107,7 @@ static struct VisitedItem *addVisitedItem(Ty_ty ty, int legal) {
 	new->legal = legal;
 	new->next = visitedItemHead;
 	visitedItemHead = new;
+	return new;
 }
 static void freeVisitedItem(struct VisitedItem *item) {
 	if(item == NULL) {
@@ -237,6 +238,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a, Tr_level level, Temp_
 					}
 					reserveOrderArgs = Tr_TrExpList(et.exp, reserveOrderArgs);
 				}
+				assert(x->u.fun.label != NULL);
 				Tr_exp call =  Tr_callExp(x->u.fun.label, reserveOrderArgs, level, x->u.fun.level);
 				return expTy(call, actual_ty(x->u.fun.result));
 			}
@@ -534,7 +536,7 @@ Tr_exp transDec(S_table venv, S_table tenv, A_dec d, Tr_level level, Temp_label 
 						S_enter(venv, l->head->name, E_VarEntry(formals->head, t->head));
 					}
 				}
-				struct expty e = transExp(venv, tenv, f->body, new_level, NULL);///// label should be NULL ? because label is for break exp ?
+				struct expty e = transExp(venv, tenv, f->body, new_level, NULL);///// label should be NULL ? because label is only for break exp ?
 				if(!equal_ty(e.ty, resultTy)) {
 					if(resultTy->kind == Ty_void) {
 						EM_error(d->pos, "procedure returns value");
@@ -544,8 +546,8 @@ Tr_exp transDec(S_table venv, S_table tenv, A_dec d, Tr_level level, Temp_label 
 					}
 					return Tr_nop();
 				}
-				//Tr_exp Tr_funcDec(Tr_exp body, Tr_level lv);/////
-				Tr_procEntryExit(new_level, e.exp, Tr_formals(new_level));/////
+				Tr_exp final_exp = (resultTy->kind == Ty_void)? e.exp : Tr_funcDec(e.exp, new_level);
+				Tr_procEntryExit(new_level, final_exp, Tr_formals(new_level));/////
 				S_endScope(venv);
 			}
 			return Tr_nop();
@@ -644,13 +646,9 @@ Ty_ty transTy (S_table tenv, A_ty t) {
 F_fragList SEM_transProg(A_exp exp){
 	S_table tenv = E_base_tenv();
 	S_table venv = E_base_venv();
-	S_enter(tenv, S_Symbol(""), Ty_Void());
-	//S_enter(venv, S_Symbol("stringEqual"), E_FunEntry(Tr_outermost(), NULL, Ty_TyList(Ty_String(), Ty_TyList(Ty_String(), NULL)), Ty_Int()));
-	//S_enter(venv, S_Symbol("allocRecord"), E_FunEntry(Tr_outermost(), NULL, Ty_TyList(Ty_Int(), NULL), Ty_Int()));
-	//S_enter(venv, S_Symbol("initArray"), E_FunEntry(Tr_outermost(), NULL, Ty_TyList(Ty_Int(), Ty_TyList(Ty_Int(), NULL)), Ty_Int()));
 	Tr_level newLevel = Tr_newLevel(Tr_outermost(), Temp_namedlabel("tigermain"), NULL);
 	struct expty e = transExp(venv, tenv, exp, newLevel, NULL);
-	Tr_procEntryExit(newLevel, e.exp, NULL);
+	Tr_procEntryExit(newLevel, Tr_funcDec(e.exp, newLevel), NULL);    // main function need tigermain's return value
 	//TODO LAB5: do not forget to add the main frame
 	return Tr_getResult();
 }

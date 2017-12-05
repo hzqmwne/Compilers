@@ -42,7 +42,7 @@ static void doProc(FILE *out, F_frame frame, T_stm body)
  AS_instrList iList;
  struct C_block blo;
 
- F_tempMap = Temp_empty();
+ F_tempMap = F_initial();
 
  //printf("doProc for function %s:\n", S_name(F_name(frame)));
  /*printStmList(stdout, T_StmList(body, NULL));
@@ -70,10 +70,11 @@ static void doProc(FILE *out, F_frame frame, T_stm body)
  //G_graph fg = FG_AssemFlowGraph(iList);  /* 10.1 */
  struct RA_result ra = RA_regAlloc(frame, iList);  /* 11 */
 
- fprintf(out, "BEGIN function\n");
+ proc =	F_procEntryExit3(frame, ra.il);
+ fprintf(out, "%s", proc->prolog);
  AS_printInstrList (out, proc->body,
                        Temp_layerMap(F_tempMap, ra.coloring));
- fprintf(out, "END function\n");
+ fprintf(out, "%s", proc->epilog);
 
  //Part of TA's implementation. Just for reference.
  /*
@@ -107,9 +108,10 @@ void doStr(FILE *out, Temp_label label, string str) {
 	fprintf(out, ".string \"");
 	int i = 0;
 	for (; i < length; i++) {
-		fprintf(out, "%c", str[i]);
+		//fprintf(out, "%c", str[i]);
+		fprintf(out, "\\x%02X", str[i]);
 	}
-	fprintf(out, "\"\n");
+	fprintf(out, "\"\n\n");
 
 	//fprintf(out, ".string \"%s\"\n", str);
 }
