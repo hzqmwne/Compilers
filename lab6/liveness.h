@@ -27,10 +27,7 @@ struct Live_moveList_ {
 Live_moveList Live_MoveList(Live_move move, Live_moveList tail);
 bool Live_inMoveList(Live_move one, Live_moveList list);
 Live_moveList Live_removeOne(Live_move one, Live_moveList list);
-/*
-Live_moveBiList Live_unionToFirst(Live_moveBiList first, Live_moveBiList second);   // first can't be used after this function!
-Live_moveBiList Live_getIntersection(Live_moveBiList first, Live_moveBiList second);
-*/
+
 
 typedef struct Live_additionalInfo_ *Live_additionalInfo;
 struct Live_additionalInfo_ {

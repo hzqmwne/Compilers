@@ -33,10 +33,10 @@ static Temp_tempList munchArgs(int index, T_expList args) {
 	if(args == NULL) {
 		return NULL;
 	}
-	Temp_tempList l = munchArgs(index + 1, args->tail);
+	munchArgs(index + 1, args->tail);
 	Temp_temp r = munchExp(args->head);
 	emit(AS_Oper("pushl `s0", L(F_SP(), NULL), L(r, L(F_SP(), NULL)), NULL));
-	return NULL;
+	return NULL;    // in x86, don't use register to transfer args
 }
 
 static Temp_temp munchExp(T_exp e) {

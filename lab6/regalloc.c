@@ -65,7 +65,7 @@ static AS_instrList deleteInstrs(AS_instrList il, Live_moveList coalescedMoves) 
 	while(now) {
 		AS_instr as = now->head;
 		string assem = AS_assem(as);
-		if(strlen(assem) == 0) {
+		if(strlen(assem) == 0) {    // not only for coalesed moves, but also for the last instr added in F_procEntryExit2
 			prev->tail = now->tail;
 			now = now->tail;
 		}

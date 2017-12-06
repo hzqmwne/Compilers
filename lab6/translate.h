@@ -51,16 +51,8 @@ Tr_exp Tr_ifExp(Tr_exp condp, Tr_exp thenp, Tr_exp elsep, bool isVoid, Tr_level 
 Tr_exp Tr_whileExp(Tr_exp condp, Tr_exp bodyExp, Temp_label done);
 Tr_exp Tr_forExp(Tr_access loopVar, Tr_exp lo, Tr_exp hi, Tr_exp bodyExp, Temp_label done, Tr_level current);
 Tr_exp Tr_asnExp(Tr_exp leftExp, Tr_exp rightExp);
-//Tr_exp Tr_callExp(A_expList args, Temp_label name, Temp_label);
 Tr_exp Tr_callExp(Temp_label name, Tr_trExpList reserveOrderArgs, Tr_level current, Tr_level declare);
-//Tr_exp Tr_insertExp(Tr_exp original, Tr_exp newExp);
-//Tr_exp Tr_expList(Tr_exp original, Tr_exp newExp);
 Tr_exp Tr_seqExp(Tr_trExpList reserveOrderTrExps);
-//Tr_exp Tr_callInit(Temp_label name);
-//Tr_exp Tr_addArg(Tr_exp call, Tr_exp arg);
-//Tr_exp Tr_staticLink(Tr_exp call, Tr_level caller, Tr_level callee);
-//Tr_exp Tr_recoverStack(Tr_exp call, int argCnt);
-//Tr_exp Tr_recordExp(Tr_exp args);
 Tr_exp Tr_recordExp(Tr_trExpList reserveOrderArgs, int argCnt, Tr_level current);
 Tr_exp Tr_arrayExp(Tr_exp size, Tr_exp init);
 Tr_exp Tr_breakExp(Temp_label target);

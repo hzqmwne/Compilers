@@ -188,17 +188,4 @@ G_nodeList G_removeOne(G_node one, G_nodeList list) {
 	}
 	return list;
 }
-/*
-G_nodeList G_unionList(G_nodeList first, G_nodeList second) {
-	G_nodeList result = NULL;
-	for(G_nodeList nl = first; nl; nl = nl->tail) {
-		if(!G_inNodeList(nl->head, second)) {
-			result = G_NodeList(nl->head, result);
-		}
-	}
-	for(G_nodeList nl = second; nl; nl = nl->tail) {
-		result = G_NodeList(nl->head, result);
-	}
-	return result;
-}
-*/
+

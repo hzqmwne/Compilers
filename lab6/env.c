@@ -71,7 +71,7 @@ S_table E_base_venv(void)
 	Ty_ty result;
 	Ty_tyList formals;
 	
-	Temp_label label = NULL;
+	//Temp_label label = NULL;
 	Tr_level level;
 	
 	level = Tr_outermost();

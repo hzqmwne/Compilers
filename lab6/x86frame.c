@@ -14,7 +14,7 @@
 struct F_frame_ {
 	Temp_label name;
 
-	F_accessList formals;    // the first formal is static link
+	F_accessList formals;    // the first formal is static link for tiger language
 	F_accessList locals;    // reserve order !
 
 	//the number of arguments
@@ -23,10 +23,12 @@ struct F_frame_ {
 	//the number of local variables
 	int length;
 
+	/*
 	//register lists for the frame
 	Temp_tempList calleesaves;
 	Temp_tempList callersaves;
 	Temp_tempList specialregs;
+	*/
 };
 
 static F_access InFrame(int offset) {
@@ -78,8 +80,8 @@ const int F_wordSize = 4;
 F_frame F_newFrame(Temp_label name, U_boolList formals) {
 	F_accessList accListHead = NULL;
 	F_accessList accListTail = NULL;
-	int offset = F_wordSize * 2;    // 8
-	assert(offset == 8);
+	int offset = F_wordSize * 2;
+	assert(offset == 8);    // in x86
 	int argCnt = 0;
 	for(; formals; formals = formals->tail) {
 		F_accessList p = checked_malloc(sizeof(*p));
@@ -277,7 +279,7 @@ AS_instrList F_procEntryExit2(AS_instrList body) {    /////
 	if(!returnSink) {
 		returnSink = Temp_TempList(F_SP(), Temp_TempList(F_FP(), F_calleesaves()));
 	}
-	return AS_splice(body, AS_InstrList(AS_Oper("", NULL, returnSink, NULL), NULL));
+	return AS_splice(body, AS_InstrList(AS_Oper("", NULL, returnSink, NULL), NULL));    // only for liveness analysis; it will be deleted in regalloc.c :: deleteInstrs
 }
 
 AS_proc F_procEntryExit3(F_frame frame, AS_instrList body) {    //////

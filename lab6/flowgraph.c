@@ -48,31 +48,28 @@ bool FG_isMove(G_node n) {
 	return a->kind == I_MOVE;
 }
 
+static TAB_table instrToNode = NULL;
+static TAB_table labelToNode = NULL;
 static G_node getNodeByASinstr(G_nodeList nl, AS_instr as) {
-	for(; nl; nl = nl->tail) {
-		if((AS_instr)(G_nodeInfo(nl->head)) == as) {
-			return nl->head;
-		}
-	}
-	return NULL;
+	return (G_node)TAB_look(instrToNode, as);
 }
-
 static G_node getNodeByTempLabel(G_nodeList nl, Temp_label l) {
-	for(; nl; nl = nl->tail) {
-		AS_instr a = (AS_instr)(G_nodeInfo(nl->head));
-		if(a->kind == I_LABEL && a->u.LABEL.label == l) {
-			return nl->head;
-		}
-	}
-	return NULL;
+	return (G_node)TAB_look(labelToNode, l);
 }
 
 G_graph FG_AssemFlowGraph(AS_instrList il, F_frame f) {
 	//your code here.
+	instrToNode = G_empty();
+	labelToNode = G_empty();
 	G_graph flowGraph = G_Graph();
 	AS_instrList insli;
 	for(insli = il; insli; insli = insli->tail) {
+		AS_instr a = insli->head;
 		G_node newNode = G_Node(flowGraph, insli->head);
+		TAB_enter(instrToNode, a, newNode);
+		if(a->kind == I_LABEL && a->u.LABEL.label != NULL) {
+			TAB_enter(labelToNode, a->u.LABEL.label, newNode);
+		}
 	}
 
 	G_nodeList nodes = G_nodes(flowGraph);

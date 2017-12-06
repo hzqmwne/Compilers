@@ -246,12 +246,7 @@ static void coalesce() {
 			addWorkList(v);
 		}
 		else {
-			bool b1, b2, b3, b4;
-			b1 = (u_info->color != NULL);    // u is precolored
-			b2 = george(u, v);
-			b3 = (u_info->color == NULL);    // u is not precolored
-			b4 = briggs(u, v);
-			if((b1 && b2) || (b3 && b4)) {
+			if(((u_info->color != NULL) && george(u, v)) || ((u_info->color == NULL) && briggs(u, v))) {
 				coalescedMoves = Live_MoveList(m, coalescedMoves);
 				combine(u, v);
 				addWorkList(u);
@@ -293,14 +288,6 @@ static void freeze() {
 	freezeWorklist = G_removeOne(u, freezeWorklist);
 	simplifyWorklist = G_NodeList(u, simplifyWorklist);
 	freezeMoves(u);
-/*
-	while(freezeWorklist != NULL) {
-		G_node u = freezeWorklist->head;
-		freezeWorklist = G_removeOne(u, freezeWorklist);
-		simplifyWorklist = G_NodeList(u, simplifyWorklist);
-		freezeMoves(u);
-	}
-*/
 }
 
 /* =========== */

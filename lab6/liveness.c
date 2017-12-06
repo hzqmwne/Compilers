@@ -63,26 +63,7 @@ Live_moveList Live_removeOne(Live_move one, Live_moveList list) {
 	}
 	return list;
 }
-/*
-Live_moveBiList Live_unionToFirst(Live_moveBiList first, Live_moveBiList second) {
-	Live_moveBiList result = first;
-	for(; second; second = second->tail) {
-		if(!inMoveBiList(second->head, first)) {
-			result = Live_MoveBiList(second->head, result);
-		}
-	}
-	return result;
-}
-Live_moveBiList Live_getIntersection(Live_moveBiList first, Live_moveBiList second) {
-	Live_moveBiList result = NULL;
-	for(; second; second = second->tail) {
-		if(inMoveBiList(second->head, first)) {
-			result = Live_MoveBiList(second->head, result)
-		}
-	}
-	return result;
-}
-*/
+
 
 static bool *updatedLabel(G_table t, G_node flowNode) {
 	return (bool *)G_look(t, flowNode);

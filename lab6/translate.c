@@ -89,6 +89,7 @@ static void doPatch(patchList tList, Temp_label label)
 		*(tList->head) = label;
 }
 
+/*
 static patchList joinPatch(patchList first, patchList second)
 {
 	if(!first) return second;
@@ -96,6 +97,7 @@ static patchList joinPatch(patchList first, patchList second)
 	first->tail = second;
 	return first;
 }
+*/
 
 static T_exp unEx(Tr_exp e) {
 	switch(e->kind) {
@@ -138,11 +140,7 @@ static T_stm unNx(Tr_exp e) {
 		}
 		case Tr_cx: {
 			assert(e->u.cx.trues != NULL && e->u.cx.falses != NULL);
-			return e->u.cx.stm;      // assert already doPatch
-			//Temp_label t = Temp_newlabel();
-			//doPatch(e->u.cx.trues, t);
-			//doPatch(e->u.cx.falses, t);
-			//return T_Seq(e->u.cx.stm, T_Label(t));
+			return e->u.cx.stm;
 			break;
 		}
 		case Tr_nx: {
@@ -418,8 +416,6 @@ Tr_exp Tr_callExp(Temp_label name, Tr_trExpList reserveOrderArgs, Tr_level curre
 	return Tr_Ex(T_Call(T_Name(name), final));
 }
 
-//Tr_exp Tr_insertExp(Tr_exp original, Tr_exp newExp);
-
 Tr_exp Tr_seqExp(Tr_trExpList reserveOrderTrExps) {
 	T_exp eseqs = NULL;
 	Tr_trExpList tmp;
@@ -428,11 +424,6 @@ Tr_exp Tr_seqExp(Tr_trExpList reserveOrderTrExps) {
 	}
 	return (eseqs == NULL)? Tr_nop() : Tr_Ex(eseqs);
 }
-
-//Tr_exp Tr_callInit(Temp_label name);
-//Tr_exp Tr_addArg(Tr_exp call, Tr_exp arg);
-//Tr_exp Tr_staticLink(Tr_exp call, Tr_level caller, Tr_level callee);
-//Tr_exp Tr_recoverStack(Tr_exp call, int argCnt);
 
 Tr_exp Tr_recordExp(Tr_trExpList reserveOrderArgs, int argCnt, Tr_level current) {
 	Tr_trExpList tmp;
@@ -474,9 +465,8 @@ Tr_exp Tr_funcDec(Tr_exp body, Tr_level lv) {
 }
 
 void Tr_procEntryExit(Tr_level level, Tr_exp body, Tr_accessList formals) {
-	////// still should do formals !!!!!
 	T_stm result = F_procEntryExit1(level->frame, unNx(body));
-	F_frag new_frag = F_ProcFrag(result, level->frame); ///// error !!!!!
+	F_frag new_frag = F_ProcFrag(result, level->frame);
 	all_frags = F_FragList(new_frag, all_frags);
 }
 

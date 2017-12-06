@@ -37,7 +37,7 @@ extern bool anyErrors;
 static void doProc(FILE *out, F_frame frame, T_stm body)
 {
  AS_proc proc;
- struct RA_result allocation;
+ //struct RA_result allocation;
  T_stmList stmList;
  AS_instrList iList;
  struct C_block blo;
@@ -53,7 +53,7 @@ static void doProc(FILE *out, F_frame frame, T_stm body)
  printf("-------====Linearlized=====-----\n");*/
 
  blo = C_basicBlocks(stmList);
- C_stmListList stmLists = blo.stmLists;
+ //C_stmListList stmLists = blo.stmLists;
  /*for (; stmLists; stmLists = stmLists->tail) {
  	printStmList(stdout, stmLists->head);
 	printf("------====Basic block=====-------\n");
@@ -64,8 +64,8 @@ static void doProc(FILE *out, F_frame frame, T_stm body)
  printf("-------====trace=====-----\n");*/
  iList  = F_codegen(frame, stmList); /* 9 */
 
- AS_printInstrList(stdout, iList, Temp_layerMap(F_tempMap, Temp_name()));
- printf("----======before RA=======-----\n");
+ /*AS_printInstrList(stdout, iList, Temp_layerMap(F_tempMap, Temp_name()));
+ printf("----======before RA=======-----\n");*/
 
  //G_graph fg = FG_AssemFlowGraph(iList);  /* 10.1 */
  struct RA_result ra = RA_regAlloc(frame, iList);  /* 11 */
@@ -119,7 +119,7 @@ void doStr(FILE *out, Temp_label label, string str) {
 int main(int argc, string *argv)
 {
  A_exp absyn_root;
- S_table base_env, base_tenv;
+ //S_table base_env, base_tenv;
  F_fragList frags;
  char outfile[100];
  FILE *out = stdout;
