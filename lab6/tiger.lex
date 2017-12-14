@@ -94,7 +94,7 @@ char *stringToken() {
 	s[pos] = '\0';
 	char *tigerStr = (char *)malloc(sizeof(int) + pos + 1);
 	*((int *)tigerStr) = pos;
-	strcpy(tigerStr + sizeof(int), s);
+	memcpy(tigerStr + sizeof(int), s, pos + 1);
 	free(s);
 	return tigerStr;
 }
