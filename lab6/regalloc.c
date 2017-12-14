@@ -89,7 +89,7 @@ struct RA_result RA_regAlloc(F_frame f, AS_instrList il) {
 		struct COL_result colResult = COL_color(liveness.graph, F_initial(), F_registers(), liveness.moves, liveness.adjSet, liveness.table);
 		if(colResult.spills != NULL) {
 			il = rewriteProgram(f, il, colResult.spills);
-			AS_printInstrList(stdout, il, Temp_layerMap(F_tempMap, Temp_name()));
+			//AS_printInstrList(stdout, il, Temp_layerMap(F_tempMap, Temp_name()));
 		}
 		else {
 			il = deleteInstrs(il, colResult.coalescedMoves);

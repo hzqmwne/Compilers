@@ -342,6 +342,7 @@ static void assignColors(Temp_tempList colors) {
 
 /* ================================================= */
 
+/*
 void printNodeList(G_nodeList nl, string s) {
 	printf("%s ", s);
 	for(G_nodeList il = nl; il; il = il->tail) {
@@ -359,6 +360,7 @@ void printFourNodeLists() {
 	printNodeList(spilledNodes, "spilledNodes");
 	printf("\n");
 }
+*/
 
 struct COL_result COL_color(G_graph ig, Temp_map initial, Temp_tempList regs, Live_moveList moves, bool **set, G_table table) {
 	//your code here.
@@ -388,34 +390,34 @@ struct COL_result COL_color(G_graph ig, Temp_map initial, Temp_tempList regs, Li
 	assert(K == 8);    // in x86
 
 	makeWorklist(G_nodes(ig));
-	printf("\n=====start======\n");
-	printFourNodeLists();
+	//printf("\n=====start======\n");
+	//printFourNodeLists();
 	do {
 		if(simplifyWorklist != NULL) {
 			simplify();
-			printf("after simplify\n");
-			printFourNodeLists();
+			//printf("after simplify\n");
+			//printFourNodeLists();
 		}
 		else if(worklistMoves != NULL) {
 			coalesce();
-			printf("after coalesce\n");
-			printFourNodeLists();
+			//printf("after coalesce\n");
+			//printFourNodeLists();
 		}
 		else if(freezeWorklist != NULL) {
 			freeze();
-			printf("after freeze\n");
-			printFourNodeLists();
+			//printf("after freeze\n");
+			//printFourNodeLists();
 		}
 		else if(spillWorklist != NULL) {
 			selectSpill();
-			printf("after selectSpill\n");
-			printFourNodeLists();
+			//printf("after selectSpill\n");
+			//printFourNodeLists();
 		}
-		printf("%d\n", 5);
+		//printf("%d\n", 5);
 	} while(!(simplifyWorklist == NULL && worklistMoves == NULL && freezeWorklist == NULL && spillWorklist == NULL));
 	assignColors(regs);
-	printNodeList(coloredNodes, "coloredNodes");
-	printNodeList(spilledNodes, "spilledNodes");
+	//printNodeList(coloredNodes, "coloredNodes");
+	//printNodeList(spilledNodes, "spilledNodes");
 
 	struct COL_result ret;
 	Temp_tempList spills = NULL;
@@ -431,7 +433,7 @@ struct COL_result COL_color(G_graph ig, Temp_map initial, Temp_tempList regs, Li
 		for(G_nodeList nl = coloredNodes; nl; nl = nl->tail) {
 			Live_additionalInfo info = Live_getAdditionalInfo(additionalNodeTable, nl->head);
 			Temp_enter(coloring, Live_gtemp(nl->head), Temp_look(initial, info->color));
-			printf("====debug==== %d %s\n", Temp_int(Live_gtemp(nl->head)), Temp_look(initial, info->color));
+			//printf("====debug==== %d %s\n", Temp_int(Live_gtemp(nl->head)), Temp_look(initial, info->color));
 		}
 		ret.coloring = coloring;
 		ret.spills = NULL;
