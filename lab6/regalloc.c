@@ -18,13 +18,15 @@
 static AS_instrList rewriteProgram(F_frame f, AS_instrList il, Temp_tempList spills) {
 	char as_buf[100];
 	il = AS_InstrList(NULL, il);
-	for(Temp_tempList tl = spills; tl; tl = tl->tail) {
+	Temp_tempList tl;
+	for(tl = spills; tl; tl = tl->tail) {
 		F_access newAcc = F_allocLocal(f, TRUE);
 		int offset = newAcc->u.offset;
 		AS_instrList now = il->tail;
 		AS_instrList prev = il;
 		for(; now; prev = now, now = now->tail) {
-			for(Temp_tempList src = AS_src(now->head); src; src = src->tail) {
+			Temp_tempList src;
+			for(src = AS_src(now->head); src; src = src->tail) {
 				if(src->head == tl->head) {
 					Temp_temp temp = Temp_newtemp();
 					sprintf(as_buf, "movl %d(`s0), `d0", offset);
@@ -34,7 +36,8 @@ static AS_instrList rewriteProgram(F_frame f, AS_instrList il, Temp_tempList spi
 					prev = prev->tail;
 				}
 			}
-			for(Temp_tempList dst = AS_dst(now->head); dst; dst = dst->tail) {
+			Temp_tempList dst;
+			for(dst = AS_dst(now->head); dst; dst = dst->tail) {
 				if(dst->head == tl->head) {
 					Temp_temp temp = Temp_newtemp();
 					sprintf(as_buf, "movl `s1, %d(`s0)", offset);
@@ -54,7 +57,8 @@ static AS_instrList rewriteProgram(F_frame f, AS_instrList il, Temp_tempList spi
 static AS_instrList deleteInstrs(AS_instrList il, Live_moveList coalescedMoves) {
 	// for all AS_instr in coalescedMoves, set its src and dst to null
 	// then for all AS_instr in il, if it is move and src and dst is null, delete it
-	for(Live_moveList ml = coalescedMoves; ml; ml = ml->tail) {
+	Live_moveList ml;
+	for(ml = coalescedMoves; ml; ml = ml->tail) {
 		AS_instr as = ml->head->as;
 		assert(as->kind == I_MOVE);
 		as->u.MOVE.assem = "";

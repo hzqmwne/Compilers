@@ -41,7 +41,8 @@ static bool **adjSet = NULL;    // the extra infomation for Temp node
 static Live_moveList nodeMoves(G_node n) {
 	Live_moveList list = NULL;
 	Live_additionalInfo info = Live_getAdditionalInfo(additionalNodeTable, n);
-	for(Live_moveList ml = info->moveList; ml; ml = ml->tail) {
+	Live_moveList ml;
+	for(ml = info->moveList; ml; ml = ml->tail) {
 		if(Live_inMoveList(ml->head, activeMoves) || Live_inMoveList(ml->head, worklistMoves)) {
 			list = Live_MoveList(ml->head, list);
 		}
@@ -52,7 +53,8 @@ static Live_moveList nodeMoves(G_node n) {
 static bool moveRelated(G_node n) {
 	// return (nodeMoves(n) != NULL);
 	Live_additionalInfo info = Live_getAdditionalInfo(additionalNodeTable, n);
-	for(Live_moveList ml = info->moveList; ml; ml = ml->tail) {
+	Live_moveList ml;
+	for(ml = info->moveList; ml; ml = ml->tail) {
 		if(Live_inMoveList(ml->head, activeMoves) || Live_inMoveList(ml->head, worklistMoves)) {
 			return TRUE;
 		}
@@ -61,7 +63,8 @@ static bool moveRelated(G_node n) {
 }
 
 static void makeWorklist(G_nodeList nodes) {
-	for(G_nodeList nl = nodes; nl; nl = nl->tail) {
+	G_nodeList nl;
+	for(nl = nodes; nl; nl = nl->tail) {
 		Live_additionalInfo info = Live_getAdditionalInfo(additionalNodeTable, nl->head);
 		if(info->color == NULL) {    // not precolored
 			if(info->degree >= K) {
@@ -80,7 +83,8 @@ static void makeWorklist(G_nodeList nodes) {
 static G_nodeList adjacent(G_node n) {
 	G_nodeList list = NULL;
 	Live_additionalInfo info = Live_getAdditionalInfo(additionalNodeTable, n);
-	for(G_nodeList nl = info->adjList; nl; nl = nl->tail) {
+	G_nodeList nl;
+	for(nl = info->adjList; nl; nl = nl->tail) {
 		if(!G_inNodeList(nl->head, selectStack) && !G_inNodeList(nl->head, coalescedNodes)) {
 			list = G_NodeList(nl->head, list);
 		}
@@ -91,8 +95,10 @@ static G_nodeList adjacent(G_node n) {
 /* =========== */
 
 static void enableMoves(G_nodeList nodes) {
-	for(G_nodeList nl = nodes; nl; nl = nl->tail) {
-		for(Live_moveList ml = nodeMoves(nl->head); ml; ml = ml->tail) {
+	G_nodeList nl;
+	for(nl = nodes; nl; nl = nl->tail) {
+		Live_moveList ml;
+		for(ml = nodeMoves(nl->head); ml; ml = ml->tail) {
 			if(Live_inMoveList(ml->head, activeMoves)) {
 				activeMoves = Live_removeOne(ml->head, activeMoves);
 				worklistMoves = Live_MoveList(ml->head, worklistMoves);
@@ -122,7 +128,8 @@ static void simplify() {
 		G_node n = simplifyWorklist->head;
 		simplifyWorklist = simplifyWorklist->tail;
 		selectStack = G_NodeList(n, selectStack);
-		for(G_nodeList nl = adjacent(n); nl; nl = nl->tail) {
+		G_nodeList nl;
+		for(nl = adjacent(n); nl; nl = nl->tail) {
 			decrementDegree(nl->head);
 		}
 	}
@@ -140,7 +147,8 @@ static void addWorkList(G_node u) {
 
 static bool george(G_node u, G_node v) {
 	Live_additionalInfo u_info = Live_getAdditionalInfo(additionalNodeTable, u);
-	for(G_nodeList nl = adjacent(v); nl; nl = nl->tail) {
+	G_nodeList nl;
+	for(nl = adjacent(v); nl; nl = nl->tail) {
 		G_node t = nl->head; 
 		Live_additionalInfo t_info = Live_getAdditionalInfo(additionalNodeTable, t);
 		if(!(t_info->degree < K || t_info->color != NULL || adjSet[t_info->index][u_info->index])) {
@@ -153,14 +161,15 @@ static bool george(G_node u, G_node v) {
 static bool briggs(G_node u, G_node v) {
 	G_nodeList adju = adjacent(u);
 	G_nodeList nodes = adju;
-	for(G_nodeList nl = adjacent(v); nl; nl = nl->tail) {
+	G_nodeList nl;
+	for(nl = adjacent(v); nl; nl = nl->tail) {
 		if(!G_inNodeList(nl->head, adju)) {
 			nodes = G_NodeList(nl->head, nodes);
 		}
 	}
 	
 	int k = 0;
-	for(G_nodeList nl = nodes; nl; nl = nl->tail) {
+	for(nl = nodes; nl; nl = nl->tail) {
 		G_node n = nl->head;
 		Live_additionalInfo n_info = Live_getAdditionalInfo(additionalNodeTable, n);
 		if(n_info->degree >= K) {
@@ -192,14 +201,16 @@ static void combine(G_node u, G_node v) {
 	coalescedNodes = G_NodeList(v, coalescedNodes);
 	v_info->alias = u;
 	Live_moveList new = u_info->moveList;
-	for(Live_moveList ml = v_info->moveList; ml; ml = ml->tail) {
+	Live_moveList ml;
+	for(ml = v_info->moveList; ml; ml = ml->tail) {
 		if(!Live_inMoveList(ml->head, u_info->moveList)) {
 			new = Live_MoveList(ml->head, new);
 		}
 	}
 	u_info->moveList = new;
 	enableMoves(G_NodeList(v, NULL));
-	for(G_nodeList nl = adjacent(v); nl; nl = nl->tail) {
+	G_nodeList nl;
+	for(nl = adjacent(v); nl; nl = nl->tail) {
 		G_node t = nl->head;
 		addEdge(adjSet, t, u, additionalNodeTable);    // addEdge is defined in liveness.c
 		decrementDegree(t);
@@ -261,7 +272,8 @@ static void coalesce() {
 /* =========== */
 
 static void freezeMoves(G_node u) {
-	for(Live_moveList ml = nodeMoves(u); ml; ml = ml->tail) {
+	Live_moveList ml;
+	for(ml = nodeMoves(u); ml; ml = ml->tail) {
 		Live_move m = ml->head;
 		G_node x = m->dst;
 		G_node y = m->src;
@@ -295,7 +307,8 @@ static void freeze() {
 static void selectSpill() {
 	G_node m = NULL;
 	int maxDegree = -1;
-	for(G_nodeList nl = spillWorklist; nl; nl = nl->tail) {
+	G_nodeList nl;
+	for(nl = spillWorklist; nl; nl = nl->tail) {
 		Live_additionalInfo info = Live_getAdditionalInfo(additionalNodeTable, nl->head);
 		if(info->degree >= maxDegree) {
 			m = nl->head;
@@ -316,7 +329,8 @@ static void assignColors(Temp_tempList colors) {
 		selectStack = G_removeOne(n, selectStack);
 		Live_additionalInfo n_info = Live_getAdditionalInfo(additionalNodeTable, n);
 		Temp_tempList okColors = copyTempList(colors);
-		for(G_nodeList nl = n_info->adjList; nl; nl = nl->tail) {
+		G_nodeList nl;
+		for(nl = n_info->adjList; nl; nl = nl->tail) {
 			G_node w = getAlias(nl->head);
 			Live_additionalInfo w_info = Live_getAdditionalInfo(additionalNodeTable, w);
 			if(w_info->color != NULL) {
@@ -331,7 +345,8 @@ static void assignColors(Temp_tempList colors) {
 			n_info->color = okColors->head;
 		}
 	}
-	for(G_nodeList nl = coalescedNodes; nl; nl = nl->tail) {
+	G_nodeList nl;
+	for(nl = coalescedNodes; nl; nl = nl->tail) {
 		Live_additionalInfo info = Live_getAdditionalInfo(additionalNodeTable, nl->head);
 		G_node alias = getAlias(nl->head);
 		Live_additionalInfo aliasinfo = Live_getAdditionalInfo(additionalNodeTable, alias);
@@ -384,7 +399,8 @@ struct COL_result COL_color(G_graph ig, Temp_map initial, Temp_tempList regs, Li
 	additionalNodeTable = table;
 	adjSet = set;
 	K = 0;
-	for(Temp_tempList tl = regs; tl; tl = tl->tail) {
+	Temp_tempList tl;
+	for(tl = regs; tl; tl = tl->tail) {
 		++K;
 	}
 	assert(K == 8);    // in x86
@@ -421,7 +437,8 @@ struct COL_result COL_color(G_graph ig, Temp_map initial, Temp_tempList regs, Li
 
 	struct COL_result ret;
 	Temp_tempList spills = NULL;
-	for(G_nodeList nl = spilledNodes; nl; nl = nl->tail) {
+	G_nodeList nl;
+	for(nl = spilledNodes; nl; nl = nl->tail) {
 		spills = Temp_TempList(Live_gtemp(nl->head), spills);
 	}
 	if(spills != NULL) {
@@ -430,7 +447,8 @@ struct COL_result COL_color(G_graph ig, Temp_map initial, Temp_tempList regs, Li
 	}
 	else {
 		Temp_map coloring = Temp_empty();
-		for(G_nodeList nl = coloredNodes; nl; nl = nl->tail) {
+		G_nodeList nl;
+		for(nl = coloredNodes; nl; nl = nl->tail) {
 			Live_additionalInfo info = Live_getAdditionalInfo(additionalNodeTable, nl->head);
 			Temp_enter(coloring, Live_gtemp(nl->head), Temp_look(initial, info->color));
 			//printf("====debug==== %d %s\n", Temp_int(Live_gtemp(nl->head)), Temp_look(initial, info->color));

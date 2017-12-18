@@ -180,7 +180,8 @@ static Temp_temp munchExp(T_exp e) {
 				string as = String(as_buf);
 				emit(AS_Oper(as, L(F_SP(), F_callersaves()), L(F_SP(), l), NULL));    // callersaves includes F_RV()
 				int argCnt = 0;
-				for(T_expList tmp = e->u.CALL.args; tmp != NULL; tmp = tmp->tail) {
+				T_expList tmp;
+				for(tmp = e->u.CALL.args; tmp != NULL; tmp = tmp->tail) {
 					++argCnt;
 				}
 				sprintf(as_buf, "addl $%d, `d0", argCnt * F_wordSize);

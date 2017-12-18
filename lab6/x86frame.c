@@ -263,7 +263,8 @@ T_stm F_procEntryExit1(F_frame frame, T_stm stm) {
 	T_stm after = T_Exp(T_Const(0));
 	T_stm begintail = result;
 	Temp_tempList calleesaves = F_calleesaves();
-	for(Temp_tempList tl = calleesaves; tl; tl = tl->tail) {
+	Temp_tempList tl;
+	for(tl = calleesaves; tl; tl = tl->tail) {
 		F_access new = F_allocLocal(frame, FALSE);
 		T_stm m = T_Seq(T_Move(F_exp(new, NULL), T_Temp(tl->head)), NULL);
 		begintail->u.SEQ.right = m;

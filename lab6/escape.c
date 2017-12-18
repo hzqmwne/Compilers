@@ -38,7 +38,8 @@ static void traverseExp(S_table env, int depth, A_exp e) {
 			break;
 		}
 		case A_callExp: {
-			for(A_expList el = e->u.call.args; el; el = el->tail) {
+			A_expList el;
+			for(el = e->u.call.args; el; el = el->tail) {
 				traverseExp(env, depth, el->head);
 			}
 			break;
@@ -49,13 +50,15 @@ static void traverseExp(S_table env, int depth, A_exp e) {
 			break;
 		}
 		case A_recordExp: {
-			for(A_efieldList fl = e->u.record.fields; fl; fl = fl->tail) {
+			A_efieldList fl;
+			for(fl = e->u.record.fields; fl; fl = fl->tail) {
 				traverseExp(env, depth, fl->head->exp);
 			}
 			break;
 		}
 		case A_seqExp: {
-			for(A_expList el = e->u.seq; el; el = el->tail) {
+			A_expList el;
+			for(el = e->u.seq; el; el = el->tail) {
 				traverseExp(env, depth, el->head);
 			}
 			break;
@@ -93,7 +96,8 @@ static void traverseExp(S_table env, int depth, A_exp e) {
 		}
 		case A_letExp: {
 			S_beginScope(env);
-			for(A_decList d = e->u.let.decs; d; d = d->tail) {
+			A_decList d;
+			for(d = e->u.let.decs; d; d = d->tail) {
 				traverseDec(env, depth, d->head);
 			}
 			traverseExp(env, depth, e->u.let.body);
@@ -115,10 +119,12 @@ static void traverseExp(S_table env, int depth, A_exp e) {
 static void traverseDec(S_table env, int depth, A_dec d) {
 	switch(d->kind) {
 		case A_functionDec: {
-			for(A_fundecList fl = d->u.function; fl; fl = fl->tail) {
+			A_fundecList fl;
+			for(fl = d->u.function; fl; fl = fl->tail) {
 				A_fundec f = fl->head;
 				S_beginScope(env);
-				for(A_fieldList l = f->params; l; l = l->tail) {
+				A_fieldList l;
+				for(l = f->params; l; l = l->tail) {
 					l->head->escape = FALSE;
 					S_enter(env, l->head->name, Esc_EscapeEntry(depth + 1, &(l->head->escape)));
 				}

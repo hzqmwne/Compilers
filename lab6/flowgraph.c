@@ -76,7 +76,8 @@ G_graph FG_AssemFlowGraph(AS_instrList il, F_frame f) {
 	for(insli = il; insli; insli = insli->tail) {
 		AS_instr a = insli->head;
 		if(a->kind == I_OPER && a->u.OPER.jumps != NULL) {
-			for(Temp_labelList labels = a->u.OPER.jumps->labels; labels; labels = labels->tail) {
+			Temp_labelList labels;
+			for(labels = a->u.OPER.jumps->labels; labels; labels = labels->tail) {
 				G_addEdge(getNodeByASinstr(nodes, a), getNodeByTempLabel(nodes, labels->head));
 			}
 		}

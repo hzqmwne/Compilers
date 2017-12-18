@@ -102,18 +102,21 @@ static G_table makeLiveMap(G_nodeList flowNodes) {
 
 				// in = use + (out - def)
 				Temp_tempList in = use;
-				for(Temp_tempList t = out; t; t = t->tail) {
+				Temp_tempList t;
+				for(t = out; t; t = t->tail) {
 					if(!Temp_inTempList(t->head, def) && !Temp_inTempList(t->head, use)) {
 						in = Temp_TempList(t->head, in);
 					}
 				}
 
-				for(G_nodeList prl = G_pred(nl->head); prl; prl = prl->tail) {
+				G_nodeList prl;
+				for(prl = G_pred(nl->head); prl; prl = prl->tail) {
 					Temp_tempList prevOut = lookupLiveMap(liveMap, prl->head);
 					Temp_tempList prevNewOut = prevOut;
 					bool *prevP = updatedLabel(updatedLabelMap, prl->head);
 					bool b = FALSE;
-					for(Temp_tempList t = in; t; t = t->tail) {
+					Temp_tempList t;
+					for(t = in; t; t = t->tail) {
 						if(!Temp_inTempList(t->head, prevOut)) {
 							b = TRUE;
 							prevNewOut = Temp_TempList(t->head, prevNewOut);
@@ -178,12 +181,13 @@ struct Live_graph Live_liveness(G_graph flow) {
 	tempToNode = TAB_empty();
 	G_graph confilict = G_Graph();
 	int precolorCnt = 0;
-	for(Temp_tempList tl = F_registers(); tl; tl = tl->tail) {
+	Temp_tempList tl;
+	for(tl = F_registers(); tl; tl = tl->tail) {
 		++precolorCnt;
 	}
 	assert(precolorCnt == 8);    // in x86
 	int nodeIndex = 0;
-	for(Temp_tempList tl = F_registers(); tl; tl = tl->tail) {
+	for(tl = F_registers(); tl; tl = tl->tail) {
 		// assert F_registers are different between each other
 		G_node newNode= G_Node(confilict, tl->head);
 		Live_additionalInfo p = calloc(1, sizeof(*p));
@@ -194,9 +198,11 @@ struct Live_graph Live_liveness(G_graph flow) {
 		setNodeOfTemp(tl->head, newNode);
 		++nodeIndex;
 	}
-	for(G_nodeList nl = flowNodes; nl; nl = nl->tail) {
+	G_nodeList nl;
+	for(nl = flowNodes; nl; nl = nl->tail) {
 		Temp_tempList live = lookupLiveMap(liveMap, nl->head);
-		for(Temp_tempList tl = live; tl; tl = tl->tail) {
+		Temp_tempList tl;
+		for(tl = live; tl; tl = tl->tail) {
 			if(getNodeByTemp(tl->head) == NULL) {
 				G_node newNode= G_Node(confilict, tl->head);
 				Live_additionalInfo p = calloc(1, sizeof(*p));
@@ -209,13 +215,15 @@ struct Live_graph Live_liveness(G_graph flow) {
 	}
 
 	bool **adjSet = (bool **)calloc(nodeIndex, sizeof(bool *));
-	for(int i = 0; i < nodeIndex; ++i) {
+	int i;
+	for(i = 0; i < nodeIndex; ++i) {
 		adjSet[i] = (bool *)calloc(nodeIndex, sizeof(bool));
 	}
 
 	// edge for precolor
-	for(int i = 0; i < precolorCnt; ++i) {
-		for(int j = 0; j < precolorCnt; ++j) {
+	for(i = 0; i < precolorCnt; ++i) {
+		int j;
+		for(j = 0; j < precolorCnt; ++j) {
 			if(i != j) {
 				adjSet[i][j] = TRUE;
 			}
@@ -224,7 +232,7 @@ struct Live_graph Live_liveness(G_graph flow) {
 
 	Live_moveList worklistMoves = NULL;
 	// Build()
-	for(G_nodeList nl = flowNodes; nl; nl = nl->tail) {
+	for(nl = flowNodes; nl; nl = nl->tail) {
 		Temp_tempList live = lookupLiveMap(liveMap, nl->head);    // liveOut
 		AS_instr as = FG_as(nl->head);
 		Temp_tempList def = FG_def(nl->head);
@@ -241,7 +249,8 @@ struct Live_graph Live_liveness(G_graph flow) {
 			info_dst->moveList = Live_MoveList(move, info_dst->moveList);
 			worklistMoves = Live_MoveList(move, worklistMoves);
 		}
-		for(Temp_tempList d = def; d; d = d->tail) {
+		Temp_tempList d;
+		for(d = def; d; d = d->tail) {
 			G_node n_d = getNodeByTemp(d->head);
 			Temp_tempList l;
 			if(isMove) {
