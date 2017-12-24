@@ -88,40 +88,42 @@ static Temp_temp munchExp(T_exp e) {
 		case T_BINOP: {
 			T_exp e1 = e->u.BINOP.left;
 			T_exp e2 = e->u.BINOP.right;
+			char *as_string;
 			switch(e->u.BINOP.op) {
 				case T_plus: {
-					// BINOP(PLUS, e1, e2)
-					Temp_temp r = Temp_newtemp();
-					Temp_temp left = munchExp(e1);
-					Temp_temp right = munchExp(e2);
-					if(r != left) {
-						emit(AS_Move("movl `s0, `d0", L(r, NULL), L(left, NULL)));
-					}
-					emit(AS_Oper("addl `s1, `d0", L(r, NULL), L(r, L(right, NULL)), NULL));
-					return r;
+					as_string = "addl";
 					break;
 				}
 				case T_minus: {
-					// BINOP(MINUS, e1, e2)
-					Temp_temp r = Temp_newtemp();
-					Temp_temp left = munchExp(e1);
-					Temp_temp right = munchExp(e2);
-					if(r != left) {
-						emit(AS_Move("movl `s0, `d0", L(r, NULL), L(left, NULL)));
-					}
-					emit(AS_Oper("subl `s1, `d0", L(r, NULL), L(r, L(right, NULL)), NULL));
-					return r;
+					as_string = "subl";
 					break;
 				}
 				case T_mul: {
-					// BINOP(MUL, e1, e2)
+					as_string = "imull";
+					break;
+				}
+				default: {
+					break;
+				}
+			}
+			switch(e->u.BINOP.op) {
+				case T_plus: case T_minus: case T_mul: {
 					Temp_temp r = Temp_newtemp();
 					Temp_temp left = munchExp(e1);
-					Temp_temp right = munchExp(e2);
 					if(r != left) {
 						emit(AS_Move("movl `s0, `d0", L(r, NULL), L(left, NULL)));
 					}
-					emit(AS_Oper("imull `s1, `d0", L(r, NULL), L(r, L(right, NULL)), NULL));
+					if(e2->kind == T_CONST) {
+						sprintf(as_buf, "%s $%d, `d0", as_string, e2->u.CONST);
+						string as = String(as_buf);
+						emit(AS_Oper(as, L(r, NULL), L(r, NULL), NULL));
+					}
+					else {
+						Temp_temp right = munchExp(e2);
+						sprintf(as_buf, "%s `s1, `d0", as_string);
+						string as = String(as_buf);
+						emit(AS_Oper(as, L(r, NULL), L(r, L(right, NULL)), NULL));
+					}
 					return r;
 					break;
 				}
@@ -184,9 +186,11 @@ static Temp_temp munchExp(T_exp e) {
 				for(tmp = e->u.CALL.args; tmp != NULL; tmp = tmp->tail) {
 					++argCnt;
 				}
-				sprintf(as_buf, "addl $%d, `d0", argCnt * F_wordSize);
-				as = String(as_buf);
-				emit(AS_Oper(as, L(F_SP(), NULL), L(F_SP(), NULL), NULL));
+				if(argCnt != 0) {
+					sprintf(as_buf, "addl $%d, `d0", argCnt * F_wordSize);
+					as = String(as_buf);
+					emit(AS_Oper(as, L(F_SP(), NULL), L(F_SP(), NULL), NULL));
+				}
 				return F_RV();
 			}
 			else {
@@ -294,7 +298,14 @@ static void munchStm(T_stm s) {
 					break;
 				}
 			}
-			emit(AS_Oper("cmpl `s1, `s0", NULL, L(munchExp(s->u.CJUMP.left), L(munchExp(s->u.CJUMP.right), NULL)), NULL));
+			if(s->u.CJUMP.right->kind == T_CONST) {
+				sprintf(as_buf, "cmpl $%d, `s0", s->u.CJUMP.right->u.CONST);
+				string as = String(as_buf);
+				emit(AS_Oper(as, NULL, L(munchExp(s->u.CJUMP.left), NULL), NULL));
+			}
+			else {
+				emit(AS_Oper("cmpl `s1, `s0", NULL, L(munchExp(s->u.CJUMP.left), L(munchExp(s->u.CJUMP.right), NULL)), NULL));
+			}
 			sprintf(as_buf, "%s %s", jins, Temp_labelstring(s->u.CJUMP.true));
 			string as = String(as_buf);
 			emit(AS_Oper(as, NULL, NULL, AS_Targets(Temp_LabelList(s->u.CJUMP.true, Temp_LabelList(s->u.CJUMP.false, NULL)))));
@@ -325,13 +336,10 @@ static void munchStm(T_stm s) {
 
 //Lab 6: put your code here
 AS_instrList F_codegen(F_frame f, T_stmList stmList) {
-	AS_instrList list;
 	T_stmList sl;
-	/*?????*/
+	iList = last = NULL;
 	for(sl = stmList; sl; sl = sl->tail) {
 		munchStm(sl->head);
 	}
-	list = iList;
-	iList = last = NULL;
-	return F_procEntryExit2(list);
+	return F_procEntryExit2(iList);
 }
