@@ -200,9 +200,11 @@ struct Live_graph Live_liveness(G_graph flow) {
 	}
 	G_nodeList nl;
 	for(nl = flowNodes; nl; nl = nl->tail) {
-		Temp_tempList live = lookupLiveMap(liveMap, nl->head);
+		//Temp_tempList live = lookupLiveMap(liveMap, nl->head);    // liveOut may not contain all temps !!!
+		AS_instr as = G_nodeInfo(nl->head);
+		Temp_tempList all = Temp_unionList(AS_src(as), AS_dst(as));    // AS_src and AS_dst must contain all temps
 		Temp_tempList tl;
-		for(tl = live; tl; tl = tl->tail) {
+		for(tl = all; tl; tl = tl->tail) {
 			if(getNodeByTemp(tl->head) == NULL) {
 				G_node newNode= G_Node(confilict, tl->head);
 				Live_additionalInfo p = calloc(1, sizeof(*p));

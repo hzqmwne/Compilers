@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "util.h"
+#include "table.h"
 #include "symbol.h"
 #include "temp.h"
 #include "tree.h"
@@ -11,7 +12,6 @@
 #include "graph.h"
 #include "liveness.h"
 #include "color.h"
-#include "table.h"
 
 
 static G_table additionalNodeTable = NULL;
@@ -360,7 +360,8 @@ static void assignColors(Temp_tempList colors) {
 /*
 void printNodeList(G_nodeList nl, string s) {
 	printf("%s ", s);
-	for(G_nodeList il = nl; il; il = il->tail) {
+	G_nodeList il;
+	for(il = nl; il; il = il->tail) {
 		Live_additionalInfo info = Live_getAdditionalInfo(additionalNodeTable, il->head);
 		printf("%d:%d ", Temp_int(Live_gtemp(il->head)), info->degree);
 	}
@@ -442,8 +443,14 @@ struct COL_result COL_color(G_graph ig, Temp_map initial, Temp_tempList regs, Li
 		spills = Temp_TempList(Live_gtemp(nl->head), spills);
 	}
 	if(spills != NULL) {
+		TAB_table tempAlias = TAB_empty();
+		G_nodeList nl;
+		for(nl = coalescedNodes; nl; nl = nl->tail) {
+			TAB_enter(tempAlias, G_nodeInfo(nl->head), G_nodeInfo(getAlias(nl->head)));
+		}
 		ret.coloring = NULL;
 		ret.spills = spills;
+		ret.tempAlias = tempAlias;
 	}
 	else {
 		Temp_map coloring = Temp_empty();
@@ -455,6 +462,7 @@ struct COL_result COL_color(G_graph ig, Temp_map initial, Temp_tempList regs, Li
 		}
 		ret.coloring = coloring;
 		ret.spills = NULL;
+		ret.tempAlias = NULL;
 	}
 	ret.coalescedMoves = coalescedMoves;
 	return ret;

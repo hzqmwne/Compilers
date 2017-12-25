@@ -14,7 +14,8 @@ typedef struct Temp_tempList_ *Temp_tempList;
 struct Temp_tempList_ { Temp_temp head; Temp_tempList tail;};
 Temp_tempList Temp_TempList(Temp_temp h, Temp_tempList t);
 bool Temp_inTempList(Temp_temp t, Temp_tempList l);
-Temp_tempList Temp_removeOne(Temp_temp one, Temp_tempList list);
+Temp_tempList Temp_removeOne(Temp_temp one, Temp_tempList list);    // the input list will be modified !!!
+Temp_tempList Temp_unionList(Temp_tempList first, Temp_tempList second);    // the two input list won't be modified
 
 typedef S_symbol Temp_label;
 Temp_label Temp_newlabel(void);

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "util.h"
+#include "table.h"
 #include "symbol.h"
 #include "temp.h"
 #include "tree.h"
@@ -12,13 +13,37 @@
 #include "liveness.h"
 #include "color.h"
 #include "regalloc.h"
-#include "table.h"
 #include "flowgraph.h"
 
-static AS_instrList rewriteProgram(F_frame f, AS_instrList il, Temp_tempList spills) {
+static AS_instrList rewriteProgram(F_frame f, AS_instrList il, Temp_tempList spills, TAB_table tempAlias) {
 	char as_buf[100];
 	il = AS_InstrList(NULL, il);
 	Temp_tempList tl;
+	AS_instrList now = il->tail;
+	AS_instrList prev = il;
+	while(now) {
+		AS_instr as = now->head;
+		for(tl = AS_src(as); tl; tl = tl->tail) {
+			Temp_temp t = TAB_look(tempAlias, tl->head);
+			if(t != NULL) {
+				tl->head = t;
+			}
+		}
+		for(tl = AS_dst(as); tl; tl = tl->tail) {
+			Temp_temp t = TAB_look(tempAlias, tl->head);
+			if(t != NULL) {
+				tl->head = t;
+			}
+		}
+		if(as->kind == I_MOVE && as->u.MOVE.src == as->u.MOVE.dst) {
+			prev->tail = now->tail;
+			now = now->tail;
+		}
+		else {
+			prev = now;
+			now = now->tail;
+		}
+	}
 	for(tl = spills; tl; tl = tl->tail) {
 		F_access newAcc = F_allocLocal(f, TRUE);
 		int offset = newAcc->u.offset;
@@ -92,11 +117,12 @@ struct RA_result RA_regAlloc(F_frame f, AS_instrList il) {
 		struct Live_graph liveness = Live_liveness(flow);
 		struct COL_result colResult = COL_color(liveness.graph, F_initial(), F_registers(), liveness.moves, liveness.adjSet, liveness.table);
 		if(colResult.spills != NULL) {
-			il = rewriteProgram(f, il, colResult.spills);
+			il = rewriteProgram(f, il, colResult.spills, colResult.tempAlias);
 			//AS_printInstrList(stdout, il, Temp_layerMap(F_tempMap, Temp_name()));
 		}
 		else {
 			il = deleteInstrs(il, colResult.coalescedMoves);
+			//AS_printInstrList(stdout, il, Temp_layerMap(F_tempMap, Temp_name()));
 			ret.coloring = colResult.coloring;
 			ret.il = il;
 			break;

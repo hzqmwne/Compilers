@@ -127,6 +127,22 @@ Temp_tempList Temp_removeOne(Temp_temp one, Temp_tempList list) {
 	return list;
 }
 
+Temp_tempList Temp_unionList(Temp_tempList first, Temp_tempList second) {    // the two input list won't be modified
+	Temp_tempList result = NULL;
+	Temp_tempList tl;
+	for(tl = first; tl; tl = tl->tail) {
+		if(!Temp_inTempList(tl->head, result)) {
+			result = Temp_TempList(tl->head, result);
+		}
+	}
+	for(tl = second; tl; tl = tl->tail) {
+		if(!Temp_inTempList(tl->head, result)) {
+			result = Temp_TempList(tl->head, result);
+		}
+	}
+	return result;
+}
+
 Temp_labelList Temp_LabelList(Temp_label h, Temp_labelList t)
 {Temp_labelList p = (Temp_labelList) checked_malloc(sizeof (*p));
  p->head=h; p->tail=t;

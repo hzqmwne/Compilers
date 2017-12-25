@@ -176,15 +176,54 @@ static struct Cx unCx(Tr_exp e)	{
 	assert(0);
 }
 
+// /* >>>>>
+struct staticLinkCache_ {
+	Tr_level current;
+	Tr_level declare;
+	T_exp r;
+};
+typedef struct staticLinkCache_ *staticLinkCache;
+
+static TAB_table levelToStaticLinkTemp = NULL;
+
+staticLinkCache StaticLinkCache(Tr_level current, Tr_level declare, T_exp r) {
+	staticLinkCache p = checked_malloc(sizeof(*p));
+	p->current = current;
+	p->declare = declare;
+	p->r = r;
+	return p;
+}
+// <<<<< */
+
 static Tr_exp Tr_staticLink(Tr_level current, Tr_level declare) {    // return value is FP(frame pointer) of each level
 	assert(current != NULL);
 	T_exp result = T_Temp(F_FP());
-	for(; current != declare; current = current->parent) {
-		assert(current != NULL);
-		F_access sl = F_formals(current->frame)->head;    // must be inFrame(8) in x86
+	// /* >>>>>
+	if(current == declare) {
+		return Tr_Ex(result);
+	}
+	if(levelToStaticLinkTemp == NULL) {
+		levelToStaticLinkTemp = TAB_empty();
+	}
+	staticLinkCache cache = (staticLinkCache)TAB_look(levelToStaticLinkTemp, declare);
+	if(cache != NULL && cache->current == current && cache->declare == declare) {
+		return Tr_Ex(cache->r);
+	}
+	// <<<<< */
+	Tr_level now;
+	for(now = current; now != declare; now = now->parent) {
+		assert(now != NULL);
+		F_access sl = F_formals(now->frame)->head;    // must be inFrame(8) in x86
 		assert(sl->kind == inFrame && sl->u.offset == 8);
 		result = F_exp(sl, result);
 	}
+	// /* >>>>>
+	Temp_temp t = Temp_newtemp();
+	Temp_temp t2 = Temp_newtemp();
+	result = T_Eseq(T_Seq(T_Move(T_Temp(t2), result), T_Move(T_Temp(t), T_Temp(t2))), T_Temp(t2));
+	staticLinkCache newCache = StaticLinkCache(current, declare, T_Temp(t));
+	TAB_enter(levelToStaticLinkTemp, declare, newCache);
+	// <<<<< */
 	return Tr_Ex(result);
 }
 
