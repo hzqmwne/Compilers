@@ -23,7 +23,7 @@ static AS_instrList rewriteProgram(F_frame f, AS_instrList il, Temp_tempList spi
 	AS_instrList prev = il;
 	while(now) {
 		AS_instr as = now->head;
-		for(tl = AS_src(as); tl; tl = tl->tail) {
+		for(tl = AS_src(as); tl; tl = tl->tail) {    // replace alias
 			Temp_temp t = TAB_look(tempAlias, tl->head);
 			if(t != NULL) {
 				tl->head = t;
@@ -35,7 +35,7 @@ static AS_instrList rewriteProgram(F_frame f, AS_instrList il, Temp_tempList spi
 				tl->head = t;
 			}
 		}
-		if(as->kind == I_MOVE && as->u.MOVE.src == as->u.MOVE.dst) {
+		if(as->kind == I_MOVE && as->u.MOVE.src->head == as->u.MOVE.dst->head) {    // if I_MOVE has the same src and dst, delete it
 			prev->tail = now->tail;
 			now = now->tail;
 		}
@@ -51,8 +51,8 @@ static AS_instrList rewriteProgram(F_frame f, AS_instrList il, Temp_tempList spi
 		AS_instrList prev = il;
 		for(; now; prev = now, now = now->tail) {
 			Temp_tempList src;
-			for(src = AS_src(now->head); src; src = src->tail) {
-				if(src->head == tl->head) {
+			for(src = AS_src(now->head); src; src = src->tail) {    // The AS_src list shouldn't have repeating elements
+				if(src->head == tl->head) {    // so this condition shouldn't be true more than once in the for loop
 					Temp_temp temp = Temp_newtemp();
 					sprintf(as_buf, "movl %d(`s0), `d0", offset);
 					AS_instr load = AS_Oper(String(as_buf), Temp_TempList(temp, NULL), Temp_TempList(F_FP(), NULL), NULL);
