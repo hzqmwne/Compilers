@@ -289,6 +289,7 @@ AS_proc F_procEntryExit3(F_frame frame, AS_instrList body) {    //////
 	char buf[100];
 	string procName = Temp_labelstring(F_name(frame));
 	sprintf(prolog, ".text\n.globl %s\n.type %s, @function\n%s:\n", procName, procName, procName);
+	//sprintf(prolog, ".text\n.globl _%s\n_%s:\n", procName, procName);
 	sprintf(epilog, "\n");
 	AS_instr a1 = AS_Oper("pushl `s0", Temp_TempList(F_SP(), NULL), Temp_TempList(F_FP(), Temp_TempList(F_SP(), NULL)), NULL);
 	AS_instr a2 = AS_Oper("movl `s0, `d0", Temp_TempList(F_FP(), NULL), Temp_TempList(F_SP(), NULL), NULL);
