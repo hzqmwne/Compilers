@@ -1,0 +1,92 @@
+https://ipads.se.sjtu.edu.cn/courses/compilers/labs/lab4.html
+
+将lab3/tiger.lex和lab3/tiger.y复制到lab4。需要修改semant.c，实现类型检查功能，并在源程序有错误时输出相应的信息。
+
+symbol.h(c)提供了S_table数据结构用来处理变量环境、值环境以及作用域的变化
+
+书的第5章给出了部分的C代码，附录给出了Tiger语言的详细规范
+
+测试样例涉及到的报错信息：
+syntax error
+    词法分析和语法分析阶段的报错
+    test49
+undefined variable %variable%
+    未声明的变量
+    test19,test20
+undefined function %function%
+    未声明的函数
+    test18
+undefined type %type%
+    未声明的类型
+    test17,test33
+type mismatch
+    变量初始化时的表达式与声明的类型不符
+    test28,test29,test31,test32
+para type mismatch
+    函数调用时参数的类型与声明时不符
+    test34,test35
+procedure returns value
+    过程有返回值
+    test21,test40
+same type required
+    比较运算符 两边的表达式类型不一致
+    test13,test14
+integer required
+    四则运算符 两边的表达式不是整数
+    test21,test26,test43
+array type required
+    对非数组变量取下标对应的值（a[i]，a不是数组变量）
+    test24
+not a record type
+    对非记录变量取记录域（d.a，d不是记录变量）
+    test25
+init should not be nil without type specified
+    用nil值初始化变量时没有声明变量的类型
+    test45
+field %field% doesn't exist
+    记录域不存在
+    test22
+unmatched assign exp
+    赋值表达式两边类型不符
+    test23
+too many params in function %function%
+    函数调用时的参数比声明时多
+    test36
+two types have the same name
+    一组类型声明中出现同名
+    test38
+two functions have the same name
+    一组函数声明中出现同名
+    test39
+then exp and else exp type mismatch
+    if-then-else语句，then和else部分的类型不同
+    test9
+if-then exp's body must produce no value
+    if-then语句，then部分不是无值表达式
+    test15
+while body must produce no value
+    while语句的循环体不是无值表达式
+    test10
+for exp's range type is not integer
+    for语句的范围值不是整数表达式
+    test10
+loop variable can't be assigned
+    for语句的循环变量在循环体中被赋值
+    test10
+illegal type cycle
+    相互递归的类型的递归环没有经过记录和数组类型（书的附录A.2）
+    test16
+
+
+几点说明：
+1、lab3中对于没有类型的变量和函数用空字符串（S_Symbol("")）填充抽象语法树，lab4需要进行相应的处理（这里采用的方式是把空字符串（""）与Ty_void的映射放到类型环境（tenv）中（semant.c第577行））
+2、函数调用有三种报错para type mismatch（参数类型不符）、too many params in function %function%（参数太多）、too few params in function %function%（参数太少）。从test35.out来看，para type mismatch的优先级最高。
+3、递归类型和递归函数的处理：对于递归函数，先整体扫描一遍，就可以得到所有函数的完整定义，然后再次扫描，处理函数体。对于递归类型，第一次整体扫描后得到的类型定义并不完整，只是未填充的Ty_Name类型。这些类型之间的依赖关系形成了一张图，如果这张图出现环且环没有经过记录和数组类型，就是illegal type cycle错误。可以使用深度优先搜索等方式检查。（以上是这里的实现。希望能找到一种更简单的处理方式）（table.h(c)提供了一个键值对映射的数据结构（通过哈希表实现）。关于依赖图可能还要自己设计数据结构）
+4、受限于lab4的函数接口，break语句必须在循环内部 这个检查没有在lab4中实现（在lab5中实现了）
+
+几个遗留的错误：
+1、while语句循环条件为integer类型和循环体为void类型的报错信息应该区分，但实现上统一报错为while body must produce no value（semant.c第371行）（未修正）
+2、按照 Tiger语言的规范，nil表达式仅可赋值给record变量，但实现上允许把nil赋值给array变量（未修正）
+3、关于类型是否匹配的判断，应该先取actual_ty，再直接比较Ty_ty指针是否相等（因为Tiger语言每一个类型表达式就会产生一个新的类型，但类型声明不会（书的5.2节））。这个错误涉及到的代码较分散，在lab5中才被发现并已在lab4中修正。
+同时发现，lab4的测试脚本（gradeMe.sh）允许程序输出的报错信息比testX.out文件中的信息多（这是合理的，因为语义错误会影响后面的语义分析过程）。但即使程序对一些完全正确的Tiger程序也输出了错误信息，也仍然能通过测试（测试脚本的bug，这种情况应当特殊处理）……但容易为后面的lab埋坑。
+

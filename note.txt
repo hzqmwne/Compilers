@@ -1,0 +1,18 @@
+这是2017年秋季学期编译原理课程的实践项目，通过几次lab的迭代，最终完整实现虎书前12章的tiger编译器。
+课程网站：https://ipads.se.sjtu.edu.cn/courses/compilers/
+教材网站：http://www.cs.princeton.edu/~appel/modern/c/
+
+开发环境：Ubuntu 16.04
+编译工具和版本：
+    gcc 5.4.0
+    make 4.1
+    lex 2.6.0
+    yacc 3.0.4
+对于64位系统，还需要32位运行库
+（对于debian系的linux系统，可以使用 apt-get install build-essential flex bison libc6-dev-i386 安装所有的工具）
+
+所有的lab文件夹彼此独立，并且都有初始环境（labX start）和完成实现（labX finish）的提交，可以回滚到相应的版本查看
+
+
+
+每个lab文件夹下同样都有note.txt文件，包含了更详细的说明

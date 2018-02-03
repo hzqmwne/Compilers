@@ -1,0 +1,117 @@
+https://ipads.se.sjtu.edu.cn/courses/compilers/labs/lab6.html
+
+将lab5 / tiger.[lex,y], frame.h, x86frame.c, semant.[c,h],translate.[c,h]复制到lab6
+（可以运行lab6/copy_lab5.sh快速复制上述8个文件）
+
+lab6是整个项目的最后一部分，需要完成编译器的 后端部分 ，从中间代码生成汇编代码（经gcc链接后生成可执行文件）
+
+
+========================================================
+
+
+PartA: Instruction Selection
+
+完成指令选择模块，需要修改codegen.[c,h]
+lab5生成的中间代码树经过canon.[c,h]的处理，已经转换为了T_stmList，与汇编代码基本可以直接对应（canon模块已经完整给出；书的第9章给出了codegen模块的部分代码）
+生成的汇编代码适用于intel x86平台，AT&T格式（gcc的默认格式）（这种格式源操作数在前，目标操作数在后，如 movl %esp, %ebp ，把esp的值放入ebp中）
+注意AS_Oper、AS_Label、AS_Move函数只会简单的复制第一个参数（string，实质是char *）到AS_instr结构中而不会复制字符串的内容，因此要确保传入的字符串不会再修改。
+对于二元运算（T_binop），当第二个参数是常数（T_const）时有简单的优化，直接使用带有常数的指令而不再调用munchExp（codegen.c第116行）。（这种情况事实上经常出现，例如循环变量自增，原来会产生 movl $1,%edx; addl %edx,%ecx 两条指令，现在只产生 addl $1,%ecx 一条指令）
+
+
+========================================================
+
+
+PartB: Register Allocation and Make the Final Compiler
+
+活跃分析：需要修改flowgraph.[ch]、liveness.[ch]
+寄存器分配：需要修改color.[ch]、regalloc.[ch]
+逃逸分析：需要修改escape.[ch]（这个模块是可选的）
+整合：注意main.c、x86frame.c
+
+lab5生成中间代码的时候假设可用的寄存器无穷多，因此生成了大量的Temp_temp变量。寄存器分配过程将Temp_temp变量映射到真实寄存器，使代码能够最终运行。
+书11.4节给出了完整的图着色寄存器分配器算法的伪代码以及详细的说明。这里对部分接口和数据结构进行了调整，以便于把书上的伪代码转换为C代码。
+（注意英文书上Combine函数有错误（Page 255.），在 http://www.cs.princeton.edu/~appel/modern/c/errata99.html 上有勘误）
+
+FG_AssemFlowGraph（位于flowgraph.c）接收PartA生成的指令链表（AS_instrList），生成 控制流图（控制流图是有向图，结点表示基本块，边表示两个基本块可能连续执行（这里为了简化，把每一条指令视为一个基本块，不同于canon.c））
+Live_liveness（位于liveness.c）接收 控制流图 和结点上的附加信息（FG_use和FG_def），生成 冲突图（冲突图是无向图，节点表示临时寄存器（Temp_temp），边表示两个临时寄存器不能映射到同一个物理寄存器）
+COL_color（位于color.c）对 冲突图 进行着色
+RA_regAlloc（位于regalloc.c）在循环中依次调用FG_AssemFlowGraph、Live_liveness、COL_color并处理溢出和合并，返回改写后的AS_instrList以及Temp_temp变量与真实寄存器的映射表
+
+书上的伪代码使用了大量的集合运算（并、交、差），但大多数情况下一个集合只是增删单个元素，用单向链表来实现较为简单。
+对链表的基本操作：
+constructor(item, list)：构造函数，在链表头添加一个元素并返回新的头部
+inList(item, list)：判断给定项是否在链表中，返回TRUE/FALSE
+removeOne(item, list)：从链表中删除一项，返回新的链表头
+对集合的基本操作：（主要是前两种）
+添加一个元素：if(!inList(item,set)) set=constructor(item,set)
+删除一个元素：if(inList(item,set)) set=removeOne(item,set)
+并集：newSet=set1; for(item in set2) if(!inList(item, set1)) newSet=constructor(item, newSet)
+交集：newSet=NULL; for(item in set1) if(inList(item, set2)) newSet=constructor(item, newSet)
+差集：newSet=NULL; for(item in set1) if(!inList(item, set2)) newSet=constructor(item, newSet)
+
+color.c使用的集合分为两类，G_nodeList和Live_moveList。
+G_nodeList定义在graph.[ch]中，三个基本操作分别是函数G_NodeList，G_inNodeList、G_removeOne（其中G_removeOne为自己补充）。
+Live_moveList定义在liveness.[ch]中，三个基本操作分别是函数Live_MoveList，Live_inMoveList、Live_removeOne（这里改写了原有的Live_moveList结构）。
+
+冲突图 的结点需要的附加信息封装在了Live_additionalInfo结构中。Live_liveness函数返回一个Live_graph结构，其中的G_table table是G_node到Live_additionalInfo的映射表
+
+书上伪代码的Build函数和AddEdge函数实现在了liveness.c中，RewriteProgram函数和Main函数实现在了regalloc.c中，其他函数实现在了color.c中
+
+
+逃逸分析（escape模块）在语义分析（semant模块）之前进行，遍历抽象语法树，找出所有在更低的层次被引用的变量，这些变量必须放到内存中，不能保留在寄存器中（参见书的第6章）。可以按照与semant.c相同的递归结构完成escape.c，注意在main.c中取消对Esc_findEscape函数调用的注释。
+
+---------------
+
+几点说明：
+
+1、溢出优先级的计算：书11.3节给出了一个算法，(循环外的引用次数+循环内的引用次数×较大的常数)/结点的度，数值越小的节点表示与很多临时变量相冲突但很少使用，应该优先溢出。在实现上没有采用这个算法，而是简单的溢出度最大的节点（color.c第307行，selectSpill）。
+（如果要应用这个算法，需要先标记出控制流图上所有的环（可以利用深度优先搜索），这些环代表循环；接下来统计所有的临时变量Temp_temp出现在环上的次数和环外的次数，并把它们记录在冲突图结点的附加信息中）
+
+2、注意中rewriteProgram函数（regalloc.c第24行的while循环），对于已被合并的node，重写程序时需要先将其改写为其真实的alias，然后再处理spill（即添加store/load指令），否则会有bug，例：
+mov L2, L1    // 把L1的值移入L2
+store M[c], L2
+如果L1被合并到L2（alias(L1)=L2）且合并结点（L2）被溢出，改写程序时需要先处理合并，即：
+mov L2, L1        -->    mov L2, L2       -->    store M[c], L2    -->   load L20, M[L2]
+store M[c], L2           store M[c], L2                                  store M[c], L20
+否则，直接改写后的程序是：
+mov L21, L1
+store M[L2], L21
+load L22, M[L2]
+store M[c], L22 
+这样L1和L21与之前L1和L2的所处状态相同。如果仍然是L1合并到L21且合并结点被溢出，会产生无限循环
+
+3、对被调用者保存寄存器的处理：书第12章给出了一种方法，在F_procEntryExit1（x86frame.c）中处理：函数入口处把被调用者保护寄存器传送到临时变量（Temp_temp）中，函数出口处再传送回来。
+例：
+    mov L1,calleesaved    //把被调用者保存的寄存器传送到临时变量
+    ...                   //函数体
+    mov calleesaved,L1    //恢复被调用者保存的寄存器
+这里，临时变量L1只在入口和出口处出现，但它在整个函数体内都是活跃的；calleesaved仅在入口处活跃。
+L1活跃范围大但引用次数少。如果存在溢出，则L1会优先溢出，程序改写为：
+    mov L11,calleesaved
+    store M[L1],L11
+    ... 
+    load L12,M[L1]
+    mov calleesaved,L12
+原先的L1被分为了活跃范围很小的L11（仅在入口出现）和L12（仅在出口出现），这时一定满足与calleesaved合并的条件，合并后的程序为：
+    store M[L1],calleesaved
+    ...
+    load calleesaved,M[L1]
+不会产生多余的MOVE指令。
+如果不存在溢出，则 把被调用者保护寄存器传送到临时变量的MOVE指令 只有被freeze后才无法消除。这样即使最初不产生这条MOVE指令，在freeze时也很可能会选择另一条MOVE指令，整体上不大可能引入多余的MOVE指令。
+
+4、没有进行全局代码优化。但是对静态链的有一个小优化：在translate.c的Tr_staticLink中，第一次计算静态链后将其保存到一个临时变量（Temp_temp），以后直接返回这个临时变量。这样在循环中访问外层变量时不需要每次都进行静态链的访存。（实测发现，由于总是溢出度数最大的结点，导致这个临时变量经常溢出，但仍比每次都沿着静态链逐级访存要好）
+
+5、帧指针：
+x86汇编保留帧指针（%ebp），因此不需要特殊处理。
+（如果要消除帧指针（如x64），则所有的局部变量都要以相对于栈指针的偏移量来访存，需要知道栈帧的大小。而栈帧的大小直到寄存器分配结束才能确定，然后再改写所有相关的访存指令）
+
+6、Tiger语言允许函数被较小作用域的同名函数覆盖，这需要在汇编代码的入口点处对同名函数加以区分。为了简单，没有实现这个特性，所有的函数在汇编代码的入口点名称就是函数名本身，如果遇到同名函数可能会产生错误。
+如果要生成其他格式的汇编代码，或者使用除了gcc以外的编译器来完成后续的编译链接过程，需要修改x86frame.[ch]、codegen.c、regalloc.c、main.c（doStr函数）调整输出文件的格式。
+（底版本或windows平台上的gcc可能会在编译生成的函数名前加下划线，导致tiger程序无法与runtime.c链接。这时可以修改F_procEntryExit3（x86frame.c）中函数汇编代码入口点的信息，用第292行替换第291行。配置好环境后该项目也可以在windows下编译）
+
+========================================================
+
+至此，Tiger编译器的全部完成。
+
+runtime.c提供了Tiger语言的库函数和运行时环境，将其与输出的汇编代码编译链接到一起，即得到可执行文件（需要32位运行库）。runtime.c从不释放内存，内存泄漏问题导致无法运行较大的Tiger程序（更好的实现应该提供垃圾回收机制，这超出了此项目的要求）。
+

@@ -1,0 +1,86 @@
+https://ipads.se.sjtu.edu.cn/courses/compilers/labs/lab3.html
+
+将lab2/tiger.lex复制到lab3。需要修改tiger.y完成语法分析与抽象语法树的生成
+
+yacc使用的是LR(1)文法（实际上，yacc会化减为LALR(1)来执行）
+
+tiger语言的规范可参考书的第3章和附录
+
+对非终结符的解释：（需要结合absyn.h中的数据结构与构造函数）
+<exp>：对应A_exp类型
+    exp：单个表达式语句
+    expseq：序列表达式（该表达式的内容是语句序列（sequencing））（用于let..in..语句的in部分和call语句的参数列表）
+<explist>
+    actuals：逗号分隔的语句（exp）序列，可以为空
+    nonemptyactuals：逗号分隔的语句序列，不能为空
+    sequencing：分号分隔的语句序列，可以为空
+    sequencing_exps：分号分隔的语句序列，不能为空
+<var>：对应A_var类型
+    lvalue：左值，有单变量（例：var）、记录的项（例：p.var）、数组的项（例：a[i]）三种类型，可以递归
+    one：（未使用）
+    oneormore：（未使用）
+<declist>
+    decs：声明序列（用于let..in..语句的let部分），可以为空
+    decs_nonempty：声明序列，不能为空
+<dec>：对应A_dec类型
+    decs_nonempty_s：单个声明项，有类型声明（tydec）、变量声明（vardec）、函数声明（fundec）三种类型
+    vardec：变量声明
+<efieldlist>
+    rec：记录（record）项的赋值序列，包含0个或多个以逗号分隔的rec_one
+    rec_nonempty：至少有1个rec_one，其他与rec相同
+<efield>
+    rec_one：形如ID=exp格式的项
+<nametylist>
+    tydec：类型定义（type）的序列，包含1个或多个tydec_one
+<namety>
+    tydec_one：单个的类型定义
+<fieldlist>
+    tyfields：记录（record）项的声明序列，可以为空
+    tyfields_nonempty：除了不能为空，其他与tyfields相同
+<ty>：对应A_ty类型
+    ty：类型定义，有命名类型、记录类型、数组类型三种
+<fundeclist>
+    fundec：函数定义（fundec_one）的序列，不能为空
+<fundec>
+    fundec_one：单个函数的定义
+
+注意记录（record）在类型声明时和为变量赋值时的区别。前者为fieldlist，用在A_ty结构中；后者为efieldlist，用在A_exp结构中。
+注意区分表达式序列和序列表达式。前者为A_expList，是一个链表；后者为seqExp，是A_exp的一个种类，其内容是一个A_expList
+
+=================================================
+
+注意lvalue的第三条规则（tiger.y第190行），ID LBRACK exp RBRACK，与第二条规则重复，这是为了避免与exp的ID LBRACK exp RBRACK OF exp规则（第100行）冲突（书第3章最后的程序设计部分有提到这一点）
+如果去掉该行，会产生问题。例如，a[i]+1，在读入“[”时由于移入（exp的ID LBRACK exp RBRACK规则（第100行））归约（lvalue的ID规则（第187行））冲突，默认选择移入;但当读入“+”时发现不是OF，栈里的a[i]又无法归约为lvalue（因为最开始的a没有归约为lvalue，无法应用lvalue的lvalue LBRACK exp RBRACK规则（第189行）），产生错误
+
+相关的文法规则为：
+exp    :   lvalue
+         | ID LBRACE exp RBRACE OF exp;
+lvalue :   ID
+         | lvalue LBRACE exp RBRACE;
+
+或者，可以简化为：(e和l为非终结符，A、B、C为终结符)
+e : l | A B C;
+l : A | l B;
+当输入为 A B 时，应当解析为下面的语法树，但在读入A且向前看符号为B时有移入B（e -> A B C）和归约为l（l -> A）的移入归约冲突，在读入B的时候默认选择了移入，造成l->A规则被忽略，最后找不到C而产生错误
+      e
+      |
+      l
+     / \
+    l   B
+    |
+    A
+
+测试用的yacc程序：
+%token <a> '1' '2' '3'
+%type <exp> exp
+%type <lvalue> lvalue
+%%
+exp : lvalue | '1' '2' '3';
+lvalue : '1' | lvalue '2;'
+%%
+使用yacc -v选项编译，产生的y.output中只有8个状态，能够清晰的看到问题所在
+
+=================================================
+
+lab3要求遇到没有类型的变量或函数返回值的时候用空字符串（S_Symbol("")）而不是空指针（NULL）去构造语法树，后面的lab需要注意
+（vardec的VAR ID ASSIGN exp（第174行）和fundec_one的FUNCTION ID LPAREN tyfields RPAREN EQ exp规则（第182行））
