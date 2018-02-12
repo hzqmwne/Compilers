@@ -92,7 +92,7 @@ Now look around again, here are some files you need to care about: </br></br>
 0. Please feel free to modify any file if you want except for Makefile and test files. You can refer to all the headers provided before (in previous final test). <br/>
 1. gdb is a powerful helper especially when your generated executable crashes. <br/>
 2. bugs could occur in any phase. You can use methods in <b>printtree.c</b> to find if you have problems in IR trees, and use methods in <b>assem.c</b> to print out the assembly code with/without register allocation. <br/>
-3. Each file has explicit function. Implement them step by step. Read the textbook and slides first when encountering problems.
+3. Each file has explicit function. Implement them step by step. Read the textbook and slides first when encountering problems.<br/>
 4. You may find the bugs in previous labs (e.g., incorrect IR).
 
 </p>
